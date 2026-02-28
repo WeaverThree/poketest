@@ -8,8 +8,13 @@ with a location in the game world (like Characters, Rooms, Exits).
 
 """
 
+import re
+
 from evennia.objects.objects import DefaultObject
 
+_MU_NEWLINE_RE = re.compile(r"%[rRnN]", re.MULTILINE)
+_MU_TAB_RE = re.compile(r"%[tT]", re.MULTILINE)
+_MU_BLANK_RE = re.compile(r"%[bB]", re.MULTILINE)
 
 class ObjectParent:
     """
@@ -21,6 +26,13 @@ class ObjectParent:
     take precedence.
 
     """
+    def get_display_desc(self, looker, **kwargs):
+        desc = self.db.desc or self.default_description
+        desc = _MU_NEWLINE_RE.sub("\n", desc)
+        desc = _MU_TAB_RE.sub("    ", desc)
+        desc = _MU_BLANK_RE.sub(" ", desc)
+        return desc
+        
 
 
 class Object(ObjectParent, DefaultObject):

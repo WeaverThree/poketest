@@ -61,6 +61,8 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         #
         self.remove("ic")
         self.remove("ooc")
+        self.remove("charcreate")
+        self.remove("chardelete")
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):

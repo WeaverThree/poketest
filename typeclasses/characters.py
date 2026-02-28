@@ -28,10 +28,57 @@ class Character(ObjectParent, DefaultCharacter):
     properties and methods available on all Object child classes like this.
 
     """
-    pass
+    
+    @property
+    def is_idle(self):
+        """
+            Has the character been idle for longer than the set time?
+        """
+        if not self.has_account:
+            return True
+        return self.idle_time > IDLE_TIME
+    
+    @property
+    def is_comms_idle(self):
+        """
+            Has the character emitted text that others can see for longer than the set time?
+        """
+        # TODO: Implement comms idle system
+        return self.is_idle
+    
+    @property
+    def is_player_character(self):
+        return False
+    
+    def get_formatted_name(self, looker=None):
+    
+            color = ""
+            
+            if not self.is_player_character:
+                color = "|x"
+            if not self.has_account:
+                color = ""
+            elif self == looker:
+                color="|420"
+            elif self.account.is_superuser:
+                color = "|[M|X" if self.is_comms_idle else "|[m|X"
+            elif self.account.permissions.check("Developer"):
+                color = "|M" if self.is_comms_idle else "|m"
+            elif self.account.permissions.check("Admin"):
+                color = "|C" if self.is_comms_idle else "|c"
+            elif self.account.permissions.check("Builder"):
+                color = "|Y" if self.is_comms_idle else "|y"
+            elif not self.is_comms_idle:
+                color = "|G"
+
+            return "{}{}{}".format(color, self.name, "|n" if color else "")
+        
 
 class PlayerCharacter(Character):
 
+    @property
+    def is_player_character(self):
+        return True
 
     def at_pre_move(self, dest, move_type=None, **kwargs):
         if move_type == "traverse":
@@ -47,7 +94,7 @@ class PlayerCharacter(Character):
     def at_post_move(self, src, **kwargs):
         active_players_in_room = [char 
                 for char in PlayerCharacter.objects.filter(Q(db_location=self.location) & ~ Q(db_key=self)) 
-                if char.idle_time < IDLE_TIME]
+                if char.idle_time and char.idle_time < IDLE_TIME]
         if active_players_in_room:
             self.ndb.movelock = time.time() + MOVE_DELAY
             self.msg("|MPlayer activity detected|n, locking movement for {} seconds.".format(MOVE_DELAY))
