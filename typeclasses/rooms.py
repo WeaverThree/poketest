@@ -75,7 +75,7 @@ class Room(ObjectParent, DefaultRoom):
                 if aliases:
                     best_alias = min(aliases, key=len)
                     if len(best_alias) < len(name):
-                        name = "|g[{}]|n {}".format(best_alias.capitalize(), name)
+                        name = "|g[{}]|n {}".format(best_alias.upper(), name)
                 exit_names.append(name)
 
         characters = sorted(self.contents_get(content_type="character"), key = lambda x: x.name)
