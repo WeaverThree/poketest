@@ -25,34 +25,34 @@ Each dict is on the form
 """
 
 HELP_ENTRY_DICTS = [
-    {
-        "key": "evennia",
-        "aliases": ["ev"],
-        "category": "General",
-        "locks": "read:perm(Developer)",
-        "text": """
-            Evennia is a MU-game server and framework written in Python. You can read more
-            on https://www.evennia.com.
+    # {
+    #     "key": "evennia",
+    #     "aliases": ["ev"],
+    #     "category": "General",
+    #     "locks": "read:perm(Developer)",
+    #     "text": """
+    #         Evennia is a MU-game server and framework written in Python. You can read more
+    #         on https://www.evennia.com.
 
-            # subtopics
+    #         # subtopics
 
-            ## Installation
+    #         ## Installation
 
-            You'll find installation instructions on https://www.evennia.com.
+    #         You'll find installation instructions on https://www.evennia.com.
 
-            ## Community
+    #         ## Community
 
-            There are many ways to get help and communicate with other devs!
+    #         There are many ways to get help and communicate with other devs!
 
-            ### Discussions
+    #         ### Discussions
 
-            The Discussions forum is found at https://github.com/evennia/evennia/discussions.
+    #         The Discussions forum is found at https://github.com/evennia/evennia/discussions.
 
-            ### Discord
+    #         ### Discord
 
-            There is also a discord channel for chatting - connect using the
-            following link: https://discord.gg/AJJpcRUhtF
+    #         There is also a discord channel for chatting - connect using the
+    #         following link: https://discord.gg/AJJpcRUhtF
 
-        """,
-    },
+    #     """,
+    # },
 ]
