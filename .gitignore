@@ -18,8 +18,11 @@ lib
 lib64
 __pycache__
 
+# Temp files from editors
+.*.sw[ponml]
+.*.kate-swp
+
 # Other
-*.swp
 *.log
 *.log.*
 *.pid
