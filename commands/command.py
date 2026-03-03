@@ -16,12 +16,17 @@ def _process_post_messages(caller):
 
     For use in at_post_cmd in multiple places.
     """
+    if not caller:
+        # Connecting without an account seems to put us here with no caller.
+        return
     caller = caller.account if hasattr(caller, "account") else caller
+    if not caller:
+        # Or here x.x
+        return
     messages = caller.ndb.post_command_messages
     if messages:
         for message in messages:
             caller.msg(message)
-            print(message)
         caller.ndb.post_command_messages = None
 
 
