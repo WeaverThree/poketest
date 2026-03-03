@@ -87,7 +87,7 @@ class ObjectParent:
         else:
             zone = "Somewhere Strange"
 
-        characters = sorted(self.contents_get(content_type="character"), key = lambda x: x.name)
+        characters = sorted(self.contents_get(content_type="character"), key = lambda x: x.name.lower())
         char_names = []
         for char in characters:
             if not char.access(looker, "view"):
@@ -101,7 +101,7 @@ class ObjectParent:
         feature_names = []
         interactable_names = []
         thing_names = []
-        for thing in sorted(things, key=lambda x: x.name):
+        for thing in sorted(things, key=lambda x: x.name.lower()):
             name = thing.get_display_name(looker, **kwargs)
             if isinstance(thing, Feature):
                 feature_names.append(name)
