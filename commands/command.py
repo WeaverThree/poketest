@@ -32,7 +32,7 @@ class MuxCommand(BaseMuxCommand):
 
     def at_post_cmd(self):
         _process_post_messages(self.caller)
-        super().at_post_cmd(self)
+        super().at_post_cmd()
     
 
 class Command(BaseCommand):
@@ -50,7 +50,7 @@ class Command(BaseCommand):
 
     def at_post_cmd(self):
         _process_post_messages(self.caller)
-        super().at_post_cmd(self)
+        super().at_post_cmd()
 
     # Each Command class implements the following methods, called in this order
     # (only func() is actually required):
