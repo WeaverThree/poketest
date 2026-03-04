@@ -59,4 +59,4 @@ nosetests.xml
 .vscode
 
 # Don't want to keep this stuff in the repo
-world/pokedata/*
+world/mondata/*
