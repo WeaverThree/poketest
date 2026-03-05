@@ -50,6 +50,10 @@ class CmdMonTypes(Command):
         
         type1 = typelookup[type1]
         type2 = typelookup[type2] if type2 else type2
+
+        if type1 == type2:
+            self.caller.msg("Double of same type not allowed, sorry.")
+            return
         
         typevulns = [1.0 for type in typenames]
         
