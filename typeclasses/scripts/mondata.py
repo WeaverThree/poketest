@@ -47,17 +47,19 @@ Move No.*, Move Name*, Priority [0 Default], Type*, Category*, Uses*, Potentcy, 
 Fairly straightforward. If favored and neglected match nothing happens. If flavors match there's no preference.
 Flavors are currently not implemented.
 ```
-Nature Name*, Favored Stat, Neglected Stat*, Favored Flavor*, Disliked Flavor*
+Nature Name*, Favored Stat*, Neglected Stat*, Favored Flavor*, Disliked Flavor*
 ```
 """
 
 import csv
 import os
 
+from evennia.utils import logger
+
 _TYPE_MATRIX_FILE = "world/mondata/Master-Type-Matrix.csv"
-_MON_LIST_FILE = "xworld/mondata/Master-Mon-List.csv"
-_MOVE_LIST_FILE = "xworld/mondata/Master-Move-List.csv"
-_NATURE_LIST_FILE = "xworld/mondata/Master-Nature-List.csv"
+_MON_LIST_FILE = "world/mondata/Master-Mon-List.csv"
+_MOVE_LIST_FILE = "world/mondata/Master-Move-List.csv"
+_NATURE_LIST_FILE = "world/mondata/Master-Nature-List.csv"
 
 _FALLBACK_TYPE_MATRIX = [
     ["---","--","-","Fire","Water","Grass","----"],
@@ -67,9 +69,20 @@ _FALLBACK_TYPE_MATRIX = [
 ]
 
 _FALLBACK_MON_LIST = [
-    "1","","","Plant Monster","Grass","","Grass Ability","","Hidden Ability","","","","40","40","40","60","60","40"
-    "2","","","Fire Winger","Fire","","Fire Ability","","Hidden Ability","","","","30","50","40","60","50","60"
-    "3","","","Water Tank","Water","","Water Ability","","Secret Ability","","","","40","40","60","50","60","40"
+    ["1","","","Plant Monster","Grass","","Grass Ability","","Hidden Ability","","","","40","40","40","60","60","40"],
+    ["2","","","Fire Winger","Fire","","Fire Ability","","Hidden Ability","","","","30","50","40","60","50","60"],
+    ["3","","","Water Tank","Water","","Water Ability","","Secret Ability","","","","40","40","60","50","60","40"],
+]
+
+_FALLBACK_MOVE_LIST = [
+    ["1","Fire Attack","","Fire","Physical","10","40","100",""],
+    ["2","Water Bomb","-2","Water","Special","10","100","60",""],
+    ["3","Undergrowth","1","Grass","Status","10","","100",""],
+]
+
+_FALLBACK_NATURE_LIST = [
+    ["Sanquine","Physical Attack","Physical Attack","Spicy","Spicy"],
+    ["Macabre","Special Attack","Physical Attack","Dry","Spicy"],
 ]
 
 from . import Script
@@ -78,41 +91,76 @@ class MonData(Script):
     key = 'mondata'
 
     def at_server_start(self):
+        """ 
+        Happens on both server start and reload.
+
+        We don't store any persistent data so we need to reload everything from disk each time.
+        This also means that if you update the spreadsheets you can run reload to update the data.
+        """
+
         self.load_data()
 
+
     def load_data(self):
+        """Loads all data files into object attributes.
+        
+        This basically needs to happen before anyone tries to access anything on this object, and
+        load_type_matrix needs to be done before everything else because tere are things that rely
+        on the types existing. 
+        """
+
         if os.path.exists(_TYPE_MATRIX_FILE): 
             with open(_TYPE_MATRIX_FILE) as infile:
                 self.load_type_matrix(csv.reader(infile))
         else:
+            logger.log_warn(f"Using type matrix fallback because no file at {_TYPE_MATRIX_FILE}.")
             self.load_type_matrix(iter(_FALLBACK_TYPE_MATRIX))
 
-        # if os.path.exists(_MON_LIST_FILE): 
-        #     with open(_MON_LIST_FILE) as infile:
-        #         self.load_mon_list(csv.reader(infile))
-        # else:
-        #     self.load_mon_list(iter(_FALLBACK_MON_LIST))
-    
+        if os.path.exists(_MON_LIST_FILE): 
+            with open(_MON_LIST_FILE) as infile:
+                self.load_mon_list(csv.reader(infile))
+        else:
+            logger.log_warn(f"Using mon list fallback because no file at {_MON_LIST_FILE}.")
+            self.load_mon_list(iter(_FALLBACK_MON_LIST))
+       
+        if os.path.exists(_MOVE_LIST_FILE): 
+            with open(_MOVE_LIST_FILE) as infile:
+                self.load_move_list(csv.reader(infile))
+        else:
+            logger.log_warn(f"Using move list fallback because no file at {_MOVE_LIST_FILE}.")
+            self.load_move_list(iter(_FALLBACK_MOVE_LIST))
+        
+        if os.path.exists(_NATURE_LIST_FILE): 
+            with open(_NATURE_LIST_FILE) as infile:
+                self.load_nature_list(csv.reader(infile))
+        else:
+            logger.log_warn(f"Using nature list fallback because no file at {_NATURE_LIST_FILE}.")
+            self.load_nature_list(iter(_FALLBACK_NATURE_LIST))
+        
+
     def load_type_matrix(self, csvdata):
+        """csvdata -> self.{types,typenames,typelookup}"""
+
         types = {}
         typenames = []
         typelookup = {}
 
         header = [cell.strip() for cell in next(csvdata)]
         if not (header[0] == '---' and header[1] == '--' and header[2] == '-', header[-1] == '----'):
-            raise ValueError("Type Matrix CSV Header Bad")
+            raise ValueError("Type matrix CSV header bad")
         
         for type in header[3:-1]:
             if type in ['-', '--', '---', '----']:
-                raise ValueError("Type Matrix CSV Header Bad")
+                raise ValueError("Type matrix CSV header bad")
             typenames.append(type)
         
         curtype = 0
         for row in csvdata:
+            row = [cell.strip() for cell in row]
             name, token, short = row[:3]
             color = row [-1]
             if name != typenames[curtype]:
-                raise ValueError("Type Matrix Types Don't Match")
+                raise ValueError("Type matrix types Don't match")
             curtype += 1
 
             vs = {x:float(y) for x,y in zip(typenames, row[3:-1])}
@@ -125,11 +173,127 @@ class MonData(Script):
             typelookup[short.lower()] = name
 
         if curtype != len(typenames):
-            raise ValueError("Type Matrix Types Don't Match")
+            raise ValueError("Type matrix types Don't match")
         
         self.types = types
         self.typenames = typenames
         self.typelookup = typelookup
+
+
+    def load_mon_list(self, csvdata):
+        """csvdata -> self.mons"""
+        mons = []
+
+        for row in csvdata:
+            row = [cell.strip() for cell in row]
+            dexno = int(row[0])
+            subtype, form, name = row[1:4]
+            if not dexno or not name:
+                raise ValueError(f"Bad mon data on row {row}")
+            
+            type1, type2 = row[4:6]
+            if not type1:
+                raise ValueError(f"Bad mon data on row {row}")
+            
+            if type1 not in self.typenames:
+                raise ValueError(f"No such type '{type1}' on row {row}")
+            if type2 and type2 not in self.typenames:
+                raise ValueError(f"No such type '{type2}' on row {row}")
+
+
+            ability1, ability2, abilityh = row[6:9]
+            ability1b, ability2b, abilityhb = row[9:12]
+            if not ability1:
+                raise ValueError(f"Bad mon data on row {row}")
+            
+            base_stats = {
+                'health': int(row[12]),
+                'physical attack': int(row[13]),
+                'physical defense': int(row[14]),
+                'special attack': int(row[15]),
+                'special defense': int(row[16]),
+                'speed': int(row[17]),
+            }
+
+            newmon = {
+                'dexno': dexno, 'subtype': subtype, 'form': form, 'name': name,
+                'type1': type1, 'type2': type2,
+                'abilities': [ability1, ability2, ability1b, ability2b],
+                'hidden_abilities': [abilityh, abilityhb],
+                'base_stats': base_stats,
+            }
+            
+            mons.append(newmon)
+        
+        self.mons = mons
+
+
+    def load_move_list(self, csvdata):
+        """csvdata -> self.moves"""
+        moves = {}
+        for row in csvdata:
+            row = [cell.strip() for cell in row]
+            moveno = int(row[0])
+            name = row[1]
+            priority = int(row[2]) if row[2] else 0
+            movetype, category = row[3:5]
+            uses = int(row[5]) if row[5] else None
+            
+            if row[6] == '∞':
+                # Using a dumb flag value for now
+                potentcy = 999
+            elif row[6]:
+                potentcy = int(row[6])
+            else:
+                potentcy = None
+            
+            if row[7] == '∞':
+                # Using a dumb flag value for now
+                accuracy = 999
+            elif row[7]:
+                accuracy = int(row[7])
+            else:
+                accuracy = None
+            
+            nonstandard = row[8]
+
+            if nonstandard:
+                # Nonstandard moves are currently ignored and not loaded
+                continue
+
+            if not all((moveno, name, movetype, category, uses)):
+                raise ValueError(f"Bad move data on row {row}")
+            if movetype not in self.typenames:
+                raise ValueError(f"No such type '{movetype}' on row {row}")
+            
+            moves[name] = {
+                'moveno':moveno, 'name':name, 'priority':priority, 'type':movetype, 'category':category,
+                'uses':uses, 'potentcy':potentcy, 'accuracy':accuracy, 'nonstandard':nonstandard,
+            }
+        self.moves = moves
+
+
+    def load_nature_list(self, csvdata):
+        """csvdata -> self.natures"""
+        natures = {}
+        for row in csvdata:
+            row = [cell.strip() for cell in row]
+            name, favored_stat, neglected_stat, favored_flavor, disliked_flavor = row
+
+            if not all((name, favored_stat, neglected_stat, favored_flavor, disliked_flavor)):
+                raise ValueError(f"Bad nature data on row {row}")
+            
+            natures[name] = {
+                'name':name, 'favored_stat':favored_stat, 'neglected_stat':neglected_stat,
+                'favored_flavor':favored_flavor, 'disliked_flavor': disliked_flavor,
+            }
+        self.natures = natures
+                    
+
+        
+
+
+
 
 
 
