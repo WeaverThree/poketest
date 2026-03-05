@@ -95,7 +95,12 @@ class CmdMonTypes(Command):
             
 
         out = []
-        out.append(f"\n|wVulnerabilities for >|n{types[type1]['colortoken']}{types[type2]['colortoken'] if type2 else ''}|w<|n")
+        if type2:
+            typetoken = f"{types[type1]['colortoken']}{types[type2]['colortoken']}"
+        else:
+            typetoken = types[type1]['doubletoken']
+            
+        out.append(f"\n|wVulnerabilities for >|n{typetoken}|w<|n")
         if one: 
             out.append(f"NO CHANGE:{''.join(one)}")
         if invuln:
