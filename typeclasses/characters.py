@@ -16,10 +16,13 @@ from django.conf import settings
 from evennia.comms.models import ChannelDB
 from evennia.objects.objects import DefaultCharacter
 from evennia.utils import logger
-
+from evennia import AttributeProperty
 
 
 from .objects import ObjectParent
+
+from world.utils import header_two_slot
+from world.monutils import display_full_mon_name, get_display_type
 
 
 
@@ -31,10 +34,38 @@ class Character(ObjectParent, DefaultCharacter):
     A general character. Contains functionality that's important for NPCs and PCs alike.
     """
     
+    species = AttributeProperty("")
+    subtype = AttributeProperty("")
+    form = AttributeProperty("")
+    dexno = AttributeProperty(0)
+    type1 = AttributeProperty("")
+    type2 = AttributeProperty("")
+    ability = AttributeProperty("")
+    base_stats = AttributeProperty({})
+    nature = AttributeProperty("")
+    moves = AttributeProperty("")
+
+    favoredstat = AttributeProperty("")
+    neglectedstat = AttributeProperty("")
+    stats = AttributeProperty({})
+    ivs = AttributeProperty({})
+    evs = AttributeProperty({})
+    level = AttributeProperty(1)
+
+    def return_appearance(self, looker, **kwargs):
+        
+        header = header_two_slot(80,
+            f"{self.get_display_name()}{self.get_extra_display_name_info(looker, **kwargs)}",
+            f"{get_display_type(self)} #{self.dexno} {display_full_mon_name(self)}",
+            headercolor="|b"
+        )
+
+        return f"\n{header}\n{self.get_display_desc(looker, **kwargs)}"
+    
     @property
     def is_idle(self):
         """
-            Has the character been idle for longer than the set time?
+        Has the character been idle for longer than the set time?
         """
         if not self.has_account:
             return True
@@ -43,7 +74,7 @@ class Character(ObjectParent, DefaultCharacter):
     @property
     def is_comms_idle(self):
         """
-            Has the character emitted text that others can see for longer than the set time?
+        Has the character emitted text that others can see for longer than the set time?
         """
         # TODO: Implement comms idle system
         return self.is_idle
@@ -55,15 +86,14 @@ class Character(ObjectParent, DefaultCharacter):
     
     def get_display_name(self, looker=None):
         """
-            Color this character name based on what their account's permissions are,
-            or otherwise what type of character it is. Staff is always staff. Quelling
-            doesn't change that.
+        Color this character name based on what their account's permissions are,
+        or otherwise what type of character it is. Staff is always staff. Quelling
+        doesn't change that.
 
-            TODO: Move colors into a config somewhere?
+        TODO: Move colors into a config somewhere?
         """
 
         color = ""
-        
         if not self.is_player_character:
             color = "|x"
         elif looker == self or looker == self.account:
@@ -88,8 +118,8 @@ class Character(ObjectParent, DefaultCharacter):
 
 class PlayerCharacter(Character):
     """
-        This Character is for accounts to connect to. It adds functionality that only matters for
-        characters that are controlled by people. 
+    This Character is for accounts to connect to. It adds functionality that only matters for
+    characters that are controlled by people. 
     """
 
     @property

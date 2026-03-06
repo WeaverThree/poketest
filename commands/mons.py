@@ -6,7 +6,7 @@ from .command import MuxCommand, Command
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils import evtable
 
-from world.monutils import type_vuln_table
+from world.monutils import type_vuln_table, display_full_mon_name, get_display_type
 
 class CmdMonTypes(Command):
     """
@@ -94,6 +94,74 @@ class CmdMonTypes(Command):
         self.caller.msg(f"|x{leftfill}|w{title}|x{rightfill}|n")
         self.caller.msg("\n".join(out))
     
+class CmdSetSpecies(MuxCommand):
+    """
+    Usage:
+        setspecies <target> = (subtype,||subtype,form,)<species name or dex number>
+    """
+    key = 'setspecies'
+    locks = "cmd:all()"
+    help_category = "Mons"
+    
+    _usage = "setspecies <target> = (subtype,||subtype,form,)<species name or dex number>"
+
+    def func(self):
+        mondata = GLOBAL_SCRIPTS.mondata
+
+        target = self.caller.search(self.lhs)
+    
+        if not target:
+            self.caller.msg(self._usage)
+            return
+    
+        if not (target.access(self.caller, "control") or target.access(self.caller, "edit")):
+            self.msg(f"You don't have permission to work on {target.name}.")
+            return
+
+        if len(self.rhslist) == 3:
+            subtype, form, monname = self.rhslist
+        elif len(self.rhslist) == 2:
+            subtype, monname = self.rhslist
+            form = ""
+        elif len(self.rhslist) == 1:
+            monname = self.rhslist[0]
+            form, subtype = "",""
+        else:
+            self.caller.msg(self._usage)
+            return
+
+        if not monname:
+            self.caller.msg(self._usage)
+
+        mons = mondata.search_mons(monname,subtype,form)
+
+        if not mons:
+            subtypemsg = f" with subtype '{subtype}'" if subtype else ""
+            formmsg = f" {'and' if subtypemsg else 'with'} form '{form}'" if form else ""
+            self.caller.msg(f"No mons found by the species name '{monname}'{subtypemsg}{formmsg}")
+            return
+
+        if len(mons) == 1:
+            mon = mons[0]
+        else:
+            out = ["Found multiple matches, please chose from:"]
+            for mon in mons:
+                out.append(f" - {get_display_type(mon)} #{mon['dexno']} {display_full_mon_name(mon)}")
+            out.append(f"Use setspecies {target} = (subtype,||subtype,form,){monname} to select. Use '-' for blank.")
+            self.caller.msg('\n'.join(out))
+            return
+
+        self.caller.msg(f"Selected {get_display_type(mon)} #{mon['dexno']} {display_full_mon_name(mon)}")
+
+        target.species = mon['name']
+        target.subtype = mon['subtype']
+        target.form = mon['form']
+        target.dexno = mon['dexno']
+        target.type1 = mon['type1']
+        target.type2 = mon['type2']
+        target.base_stats = mon['base_stats']
+        self.caller.msg(f"{target.name} updated.")
+
 
 
 

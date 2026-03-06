@@ -101,6 +101,26 @@ class MonData(Script):
     moves = NAttributeProperty({})
     natures = NAttributeProperty({})
 
+    def search_mons(self, namenum, subtype="", form=""):
+        candidates = []
+        subtype = subtype.lower()
+        form = form.lower()
+        try:
+            dexno = int(namenum)
+            candidates = [mon for mon in self.mons if mon['dexno'] == dexno]
+        except ValueError:
+            searchname = namenum.lower()
+            candidates = [mon for mon in self.mons if mon['name'].lower() == searchname]
+
+        if subtype:
+            subtype = "" if subtype == '-' else subtype
+            candidates = [mon for mon in candidates if mon['subtype'].lower() == subtype]
+        if form:
+            form = "" if form == '-' else form
+            candidates = [mon for mon in candidates if mon['form'].lower() == form]
+            
+        return candidates
+
     def at_server_start(self):
         """ 
         Happens on both server start and reload.

@@ -80,3 +80,34 @@ def type_vuln_table(type1, type2="", show_header=True, show_nochange=True):
         out.append(f"    |[r|XERROR|n:{''.join(huh)}")
 
     return '\n'.join(out)
+
+def display_full_mon_name(mon):
+    from typeclasses.characters import Character
+    if isinstance(mon, Character):
+        name = mon.species
+        subtype = mon.subtype
+        form = mon.form
+    else:
+        name = mon['name']
+        subtype = mon['subtype']
+        form = mon['form']
+    
+    subtype = f"|Y{subtype}|n " if subtype else ""
+    form = f"|R{form}|n " if form else ""
+    return f"{form}{subtype}|w{name}|n"
+
+def get_display_type(mon):
+    from typeclasses.characters import Character
+    if isinstance(mon, Character):
+        type1 = mon.type1
+        type2 = mon.type2
+    else:
+        type1 = mon['type1']
+        type2 = mon['type2']
+    
+    types = GLOBAL_SCRIPTS.mondata.types
+    if not type2:
+        return types[type1]['doubletoken']
+    else:
+        return types[type1]['colortoken'] + types[type2]['colortoken']
+    
