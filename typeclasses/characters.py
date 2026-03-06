@@ -24,7 +24,7 @@ from evennia import AttributeProperty
 from .objects import ObjectParent
 
 from world.utils import header_two_slot
-from world.monutils import display_full_mon_name, get_display_type
+from world.monutils import get_display_mon_banner
 
 
 
@@ -47,8 +47,8 @@ class Character(ObjectParent, DefaultCharacter):
     nature = AttributeProperty("")
     moves = AttributeProperty("")
 
-    favoredstat = AttributeProperty("")
-    neglectedstat = AttributeProperty("")
+    favored_stat = AttributeProperty("")
+    neglected_stat = AttributeProperty("")
     stats = AttributeProperty({})
     ivs = AttributeProperty({})
     evs = AttributeProperty({})
@@ -58,7 +58,7 @@ class Character(ObjectParent, DefaultCharacter):
         
         header = header_two_slot(80,
             f"{self.get_display_name()}{self.get_extra_display_name_info(looker, **kwargs)}",
-            f"{get_display_type(self)} #{self.dexno} {display_full_mon_name(self)}",
+            f"{get_display_mon_banner(self)}",
             headercolor="|b"
         )
 
@@ -92,9 +92,9 @@ class Character(ObjectParent, DefaultCharacter):
                 topline = (2 * self.base_stats[stat] + self.ivs[stat] + math.floor(self.evs[stat] / 4)) * self.level
                 value = math.floor(topline / 100) + 5
 
-            if stat == self.favoredstat:
+            if stat == self.favored_stat:
                 value = math.floor(stat * 1.10)
-            elif stat == self.neglectedstat:
+            elif stat == self.neglected_stat:
                 value = math.floor(stat * 0.90)
             
             stats[stat] = value

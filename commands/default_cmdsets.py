@@ -46,6 +46,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(mons.CmdMonTypes()) 
         self.add(mons.CmdSetSpecies())
         self.add(mons.CmdRandMons())
+        self.add(mons.CmdSetNature())
 
 
 

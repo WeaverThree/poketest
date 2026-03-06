@@ -81,7 +81,7 @@ def type_vuln_table(type1, type2="", show_header=True, show_nochange=True):
 
     return '\n'.join(out)
 
-def display_full_mon_name(mon):
+def get_display_mon_name(mon):
     from typeclasses.characters import Character
     if isinstance(mon, Character):
         name = mon.species
@@ -96,7 +96,7 @@ def display_full_mon_name(mon):
     form = f"|R{form}|n " if form else ""
     return f"{form}{subtype}|w{name}|n"
 
-def get_display_type(mon):
+def get_display_mon_type(mon):
     from typeclasses.characters import Character
     if isinstance(mon, Character):
         type1 = mon.type1
@@ -111,3 +111,10 @@ def get_display_type(mon):
     else:
         return types[type1]['colortoken'] + types[type2]['colortoken']
     
+
+def get_display_mon_banner(mon):
+    from typeclasses.characters import Character
+    if isinstance(mon, Character):
+        return f"{get_display_mon_type(mon)} #{mon.dexno} {get_display_mon_name(mon)}"
+    else:
+        return f"{get_display_mon_type(mon)} #{mon['dexno']} {get_display_mon_name(mon)}"
