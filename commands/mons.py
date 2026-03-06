@@ -1,6 +1,7 @@
 
 
 import math
+import random
 
 from .command import MuxCommand, Command
 from evennia import GLOBAL_SCRIPTS
@@ -103,7 +104,7 @@ class CmdSetSpecies(MuxCommand):
     locks = "cmd:all()"
     help_category = "Mons"
     
-    _usage = "setspecies <target> = (subtype,||subtype,form,)<species name or dex number>"
+    _usage = "Usage: setspecies <target> = (subtype,||subtype,form,)<species name or dex number>"
 
     def func(self):
         mondata = GLOBAL_SCRIPTS.mondata
@@ -188,5 +189,38 @@ class CmdSetSpecies(MuxCommand):
         self.caller.msg(f"{target.name} updated.")
 
 
+class CmdRandMons(Command):
+    """
+    Usage:
+        randmons [count]
+    """
+    key = 'randmons'
+    locks = "cmd:all()"
+    help_category = "Mons"
+    
+    _usage = "Usage: randmons [count]"
 
+    def func(self):
+        mondata = GLOBAL_SCRIPTS.mondata
+
+        if self.args:
+            try:
+                count = int(self.args.strip())
+            except ValueError:
+                self.caller.msg(self._usage)
+                return
+        else:
+            count = 5
+        
+        count = min(count,50)
+
+        mons = random.sample(mondata.mons, count)
+
+        for idx, mon in enumerate(mons):
+
+            num = f"{idx+1}" if count < 10 else f"{idx+1:2d}"
+                
+            self.caller.msg(f" - {num} - {get_display_type(mon)} #{mon['dexno']:<4d} {display_full_mon_name(mon)}")
+            
+            
 

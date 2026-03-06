@@ -45,6 +45,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(comms_override.CmdPage())
         self.add(mons.CmdMonTypes()) 
         self.add(mons.CmdSetSpecies())
+        self.add(mons.CmdRandMons())
 
 
 
