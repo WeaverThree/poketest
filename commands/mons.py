@@ -6,18 +6,21 @@ from .command import MuxCommand, Command
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils import evtable
 
+from world.monutils import type_vuln_table
 
 class CmdMonTypes(Command):
     """
-    Prints the type effectiveness table.
+    Without arguments, prints the full type effectiveness table.
+    Otherwise:
+        montypes type1[/type2] -> analyze type (combination) vulnerabilities
     """
 
-    key = "MonTypes"
+    key = "montypes"
     aliases = "Vulns"
     locks = "cmd:all()"
     help_category = "Mons"
 
-    _usage = "Usage: MonTypes type1[,type2] - analyze pokemon type (combo)"
+    _usage = "Usage: montypes type1[/type2] - analyze pokemon type (combo)"
 
     def func(self):
         self.args = self.args.strip()
@@ -32,12 +35,8 @@ class CmdMonTypes(Command):
                 self.caller.msg(self._usage)
             
 
-        
-        
     def type_analysis(self, type1,type2=""):    
         mondata = GLOBAL_SCRIPTS.mondata
-        types = mondata.types
-        typenames = mondata.typenames
         typelookup = mondata.typelookup
 
         if not type1 in typelookup:
@@ -49,82 +48,13 @@ class CmdMonTypes(Command):
             return
         
         type1 = typelookup[type1]
-        type2 = typelookup[type2] if type2 else type2
+        type2 = typelookup[type2] if type2 else ""
 
         if type1 == type2:
             self.caller.msg("Double of same type not allowed, sorry.")
             return
-        
-        typevulns = [1.0 for type in typenames]
-        
-        for i, type in enumerate(typenames):
-            typevulns[i] = typevulns[i] * types[type]['vs'][type1]
-        
-        if type2:
-            for i, type in enumerate(typenames):
-                typevulns[i] = typevulns[i] * types[type]['vs'][type2]
 
-        invuln = []
-        quarter = []
-        half = []
-        one = []
-        two = []
-        four = []
-        huh = []
-
-        def _appendwrap(list,data):
-            if len(list) > 1 and len(list) % 8 == 0:
-                list.append('\n          ')
-            list.append(data)
-
-        for type, vuln in zip(typenames, typevulns):
-            if vuln == 0.0:
-                _appendwrap(invuln,types[type]['colortoken'])
-            elif vuln == 0.25:
-                _appendwrap(quarter,types[type]['colortoken'])
-            elif vuln == 0.5:
-                _appendwrap(half,types[type]['colortoken'])
-            elif vuln == 1.0:
-                _appendwrap(one,types[type]['colortoken'])
-            elif vuln == 2.0:
-                _appendwrap(two,types[type]['colortoken'])
-            elif vuln == 4.0:
-                _appendwrap(four,types[type]['colortoken'])
-            else:
-                _appendwrap(huh,types[type]['colortoken'])
-            
-
-        out = []
-        if type2:
-            typetoken = f"{types[type1]['colortoken']}{types[type2]['colortoken']}"
-        else:
-            typetoken = types[type1]['doubletoken']
-            
-        out.append(f"\n|wVulnerabilities for >|n{typetoken}|w<|n")
-        if one: 
-            out.append(f"NO CHANGE:{''.join(one)}")
-        if invuln:
-            out.append(f"   |wINVULN|n:{''.join(invuln)}")
-        if quarter:
-            out.append(f"  |bQUARTER|n:{''.join(quarter)}")
-        if half:
-            out.append(f"     |gHALF|n:{''.join(half)}")
-        if two:
-            out.append(f"   |yDOUBLE|n:{''.join(two)}")
-        if four:
-            out.append(f"     |rQUAD|n:{''.join(four)}")
-        if huh:
-            out.append(f"    |[r|XERROR|n:{''.join(huh)}")
-
-
-        self.caller.msg('\n'.join(out))
-
-            
-
-
-
-
-
+        self.caller.msg(type_vuln_table(type1, type2))
 
 
     def print_table(self):
