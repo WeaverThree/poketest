@@ -16,12 +16,13 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 from evennia import default_cmds
 
-from . import ooc
+from . import admin_overrides
 from . import building_overrides
-from . import comms_override
+from . import comms_overrides
 from . import mons
 from . import chargen_admin
 from . import userlisting
+from . import ooc
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
@@ -41,12 +42,12 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         # any commands you add below will overload the default ones.
         #
         self.remove("whisper")
-        self.add(ooc.CmdOOC())
+        self.add(admin_overrides.CmdForce())
         self.add(building_overrides.CmdDesc())
         self.add(building_overrides.CmdDestroy())
         self.add(building_overrides.CmdWipe())
-        self.add(comms_override.CmdChannel())
-        self.add(comms_override.CmdPage())
+        self.add(comms_overrides.CmdChannel())
+        self.add(comms_overrides.CmdPage())
         self.add(mons.CmdMonTypes()) 
         self.add(mons.CmdRandMons())
         self.add(chargen_admin.CmdAdminSetSpecies())
@@ -57,6 +58,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(userlisting.CmdStaff())
         self.add(userlisting.CmdStatus())
         self.add(userlisting.CmdStaffInfo())
+        self.add(ooc.CmdOOC())
 
 
 

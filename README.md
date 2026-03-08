@@ -10,7 +10,7 @@ I'm just making this public to make things easier.
 
 - Probably need to customize all of the emitting functions anyway.
     - Third person command output for everyone
-    - Name colors on command output
+    - Name colors on command output (partial)
     - Semicolon command for portability
     - Spoof command
     - Change RP trap system to use time since someone emitted text into a room rather than their unidle presence
@@ -65,11 +65,6 @@ I'm just making this public to make things easier.
     find command
     special abilities
 
-- Prevent certain commands from working on player characters to prevent accidents or abuse:
-    @wipe
-    @force
-
-
 - xp gain:
 
 
@@ -80,13 +75,15 @@ I'm just making this public to make things easier.
 
 - start in AUP room
     - staff list command. shows offline staff, with tag about what they do
-    - can make npcs and puppets and stuff
-    - can't build, modify descs
+
 
 - must be builder to build. might be able to desc owned rooms but not build from them
 
 - refit helper to plot runner
     - minor powers to make npcs
+- helper / plotrunner
+    - can make npcs and puppets and stuff
+    - can't build, modify descs
 
 - authorization keyring object
 - room claim system, lockable doors, auto updating exit names
