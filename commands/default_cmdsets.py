@@ -21,6 +21,7 @@ from . import building_overrides
 from . import comms_override
 from . import mons
 from . import chargen_admin
+from . import userlisting
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
@@ -39,6 +40,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
+        self.remove("whisper")
         self.add(ooc.CmdOOC())
         self.add(building_overrides.CmdDesc())
         self.add(building_overrides.CmdDestroy())
@@ -50,6 +52,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(chargen_admin.CmdAdminSetNature())
         self.add(chargen_admin.CmdAdminBuyIVs())
         self.add(chargen_admin.CmdAuditLog())
+        self.add(userlisting.CmdWho())
+        self.add(userlisting.CmdStaff())
+        self.add(userlisting.CmdStatus())
+        self.add(userlisting.CmdStaffInfo())
+
 
 
 
@@ -78,6 +85,7 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         self.remove("ooc")
         self.remove("charcreate")
         self.remove("chardelete")
+        self.remove("who")
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):

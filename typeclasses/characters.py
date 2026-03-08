@@ -270,6 +270,8 @@ class PlayerCharacter(Character):
 
     approved = AttributeProperty(False)
     auditlog = AttributeProperty([])
+    whostatus = AttributeProperty("")
+    stafftag = AttributeProperty("")
 
     
     def logaudit(self, msg):

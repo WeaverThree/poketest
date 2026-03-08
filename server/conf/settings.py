@@ -28,7 +28,7 @@ from evennia.settings_default import *
 ######################################################################
 
 # This is the name of your game. Make it catchy!
-SERVERNAME = "PokeTest"
+SERVERNAME = "Pokemorph Below"
 BASE_CHARACTER_TYPECLASS = "typeclasses.characters.PlayerCharacter"
 COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"
 
