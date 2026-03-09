@@ -30,11 +30,6 @@ class Exit(ObjectParent, DefaultExit):
         if aliases:
             best_alias = min(aliases, key=len)
             if len(best_alias) < len(name):
-                if self.access(looker, "traverse"):
-                    name = f"|g[{best_alias.upper()}]|n {name}"
-                else:
-                    name = f"|x[{best_alias.upper()}]|n |s{name}|n"
-        elif not self.access(looker, "traverse"):
-            name = f"|s{name}|n"
+                name = f"|g[{best_alias.upper()}]|n {name}"
         return name
             
