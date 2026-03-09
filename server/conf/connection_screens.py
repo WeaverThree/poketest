@@ -20,7 +20,7 @@ of the screen is done by the unlogged-in "look" command.
 
 """
 
-from django.conf import settings
+from django.conf import settings # type: ignore
 
 from evennia import utils
 

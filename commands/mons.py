@@ -14,15 +14,15 @@ class CmdMonTypes(Command):
     """
     Without arguments, prints the full type effectiveness table.
     Otherwise:
-        montypes type1[/type2] -> analyze type (combination) vulnerabilities
+        +montypes type1[/type2] -> analyze type (combination) vulnerabilities
     """
 
-    key = "montypes"
+    key = "+montypes"
     aliases = "Vulns"
     locks = "cmd:all()"
     help_category = "Mons"
 
-    _usage = "Usage: montypes type1[/type2] - analyze pokemon type (combo)"
+    _usage = "Usage: +montypes type1[/type2] - analyze pokemon type (combo)"
 
     def func(self):
         self.args = self.args.strip()
@@ -100,13 +100,13 @@ class CmdMonTypes(Command):
 class CmdRandMons(Command):
     """
     Usage:
-        randmons [count]
+        +randmons [count]
     """
-    key = 'randmons'
+    key = '+randmons'
     locks = "cmd:all()"
     help_category = "Mons"
     
-    _usage = "Usage: randmons [count]"
+    _usage = "Usage: +randmons [count]"
 
     def func(self):
         mondata = GLOBAL_SCRIPTS.mondata

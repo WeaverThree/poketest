@@ -20,18 +20,10 @@ I'm just making this public to make things easier.
 - Character creation system
 
 - Stats.
-    - Pokémon type
     - Pokémon 6 stats
-        - Base Stats
-        - Level 
-        - IVs
         - EVs
-        - Nature
-        - Computed Stats
-    - Elemental Types
     - Known moves
     - Equipped moves
-        - Move object?
     - IC Wordcount
     - Affiliation
         - Faction (Guild, Rogue, Merc, Unaffiliated)
@@ -72,29 +64,12 @@ I'm just making this public to make things easier.
 
 - uppercase names required
 
-- normalize command prefixes
-    @unlink
-    @ban
-    @boot
-    @emit
-    @perm
-    @unban
-    @userpassword
-    @wall
-    @force
-    @batchcommands
-    channel
-    @ircstatus
-    @ other system status
-    +montypes
-    +randmons
-
-
 - In character home. Home takes you there
 - see unlogged characters
 - unlogged characters go home after 24 hours
 - rooms that you can home in
 
+- bitch at you if room desc is too short
 
 - start in AUP room
     - staff list command. shows offline staff, with tag about what they do

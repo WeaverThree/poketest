@@ -1,29 +1,18 @@
 
 from django.conf import settings # type: ignore
 
-from evennia.commands.default.building import ObjManipCommand
-from evennia.utils import create, funcparser, logger, search, utils
-from evennia.utils.ansi import raw as ansi_raw
-from evennia.utils.dbserialize import deserialize
+from evennia.commands.default.building import ObjManipCommand, CmdLink
+from evennia.utils import utils
 from evennia.utils.eveditor import EvEditor
-from evennia.utils.evmore import EvMore
-from evennia.utils.evtable import EvTable
 from evennia.utils.utils import (
     class_from_module,
-    crop,
-    dbref,
-    display_len,
-    format_grid,
-    get_all_typeclasses,
-    inherits_from,
-    interactive,
-    list_to_string,
-    variable_from_module,
 )
 
 from typeclasses.characters import PlayerCharacter
 
 COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)
+
+# destroy and wipe will not target player characters. desc doesn't autotarget here. unlink gains @
 
 def _desc_load(caller):
     return caller.db.evmenu_target.db.desc or ""
@@ -317,3 +306,38 @@ class CmdWipe(ObjManipCommand):
                 obj.attributes.remove(attrname)
             string = f"Wiped attributes {','.join(attrs)} on {obj.name}."
         caller.msg(string)
+
+class CmdUnLink(CmdLink):
+    """
+    remove exit-connections between rooms
+
+    Usage:
+      @unlink <Object>
+
+    Unlinks an object, for example an exit, disconnecting
+    it from whatever it was connected to.
+    """
+
+    # this is just a child of CmdLink
+
+    key = "@unlink"
+    locks = "cmd:perm(unlink) or perm(Builder)"
+    help_key = "Building"
+
+    def func(self):
+        """
+        All we need to do here is to set the right command
+        and call func in CmdLink
+        """
+
+        caller = self.caller
+
+        if not self.args:
+            caller.msg("Usage: unlink <object>")
+            return
+
+        # This mimics 'link <obj> = ' which is the same as unlink
+        self.rhs = ""
+
+        # call the link functionality
+        super().func()

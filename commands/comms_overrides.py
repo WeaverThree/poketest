@@ -12,6 +12,11 @@ from evennia.utils.evmenu import ask_yes_no
 from evennia.utils.logger import tail_log_file
 from evennia.utils.utils import class_from_module, strip_unsafe_input
 
+# Page and channel overrides - work on character objects
+# Channel - not @ command
+# Everything else: @commands
+
+
 COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)
 CHANNEL_DEFAULT_TYPECLASS = class_from_module(
     settings.BASE_CHANNEL_TYPECLASS, fallback=settings.FALLBACK_CHANNEL_TYPECLASS
@@ -190,8 +195,8 @@ class CmdChannel(COMMAND_DEFAULT_CLASS):
 
     """
 
-    key = "@channel"
-    aliases = ["@chan", "@channels"]
+    key = "channel"
+    aliases = ["chan", "channels"]
     help_category = "Comms"
     # these cmd: lock controls access to the channel command itself
     # the admin: lock controls access to /boot/ban/unban switches
@@ -1474,3 +1479,620 @@ class CmdPage(COMMAND_DEFAULT_CLASS):
             self.msg(string)
             return
 
+
+
+def _list_bots(cmd):
+    """
+    Helper function to produce a list of all IRC bots.
+
+    Args:
+        cmd (Command): Instance of the Bot command.
+    Returns:
+        bots (str): A table of bots or an error message.
+
+    """
+    ircbots = [
+        bot for bot in AccountDB.objects.filter(db_is_bot=True, username__startswith="ircbot-")
+    ]
+    if ircbots:
+        table = cmd.styled_table(
+            "|w#dbref|n",
+            "|wbotname|n",
+            "|wev-channel|n",
+            "|wirc-channel|n",
+            "|wSSL|n",
+            maxwidth=_DEFAULT_WIDTH,
+        )
+        for ircbot in ircbots:
+            ircinfo = "%s (%s:%s)" % (
+                ircbot.db.irc_channel,
+                ircbot.db.irc_network,
+                ircbot.db.irc_port,
+            )
+            table.add_row(
+                "#%i" % ircbot.id,
+                ircbot.db.irc_botname,
+                ircbot.db.ev_channel,
+                ircinfo,
+                ircbot.db.irc_ssl,
+            )
+        return table
+    else:
+        return "No irc bots found."
+
+
+class CmdIRC2Chan(COMMAND_DEFAULT_CLASS):
+    """
+    Link an evennia channel to an external IRC channel
+
+    Usage:
+      @irc2chan[/switches] <evennia_channel> = <ircnetwork> <port> <#irchannel> <botname>[:typeclass]
+      @irc2chan/delete botname|#dbid
+
+    Switches:
+      /delete     - this will delete the bot and remove the irc connection
+                    to the channel. Requires the botname or #dbid as input.
+      /remove     - alias to /delete
+      /disconnect - alias to /delete
+      /list       - show all irc<->evennia mappings
+      /ssl        - use an SSL-encrypted connection
+
+    Example:
+      @irc2chan myircchan = irc.dalnet.net 6667 #mychannel evennia-bot
+      @irc2chan public = irc.freenode.net 6667 #evgaming #evbot:accounts.mybot.MyBot
+
+    This creates an IRC bot that connects to a given IRC network and
+    channel. If a custom typeclass path is given, this will be used
+    instead of the default bot class.
+    The bot will relay everything said in the evennia channel to the
+    IRC channel and vice versa. The bot will automatically connect at
+    server start, so this command need only be given once. The
+    /disconnect switch will permanently delete the bot. To only
+    temporarily deactivate it, use the  |wservices|n command instead.
+    Provide an optional bot class path to use a custom bot.
+    """
+
+    key = "@irc2chan"
+    switch_options = ("delete", "remove", "disconnect", "list", "ssl")
+    locks = "cmd:serversetting(IRC_ENABLED) and pperm(Developer)"
+    help_category = "Comms"
+
+    def func(self):
+        """Setup the irc-channel mapping"""
+
+        if not settings.IRC_ENABLED:
+            string = """IRC is not enabled. You need to activate it in game/settings.py."""
+            self.msg(string)
+            return
+
+        if "list" in self.switches:
+            # show all connections
+            self.msg(_list_bots(self))
+            return
+
+        if "disconnect" in self.switches or "remove" in self.switches or "delete" in self.switches:
+            botname = f"ircbot-{self.lhs}"
+            matches = AccountDB.objects.filter(db_is_bot=True, username=botname)
+            dbref = utils.dbref(self.lhs)
+            if not matches and dbref:
+                # try dbref match
+                matches = AccountDB.objects.filter(db_is_bot=True, id=dbref)
+            if matches:
+                matches[0].delete()
+                self.msg("IRC connection destroyed.")
+            else:
+                self.msg("IRC connection/bot could not be removed, does it exist?")
+            return
+
+        if not self.args or not self.rhs:
+            string = (
+                "Usage: @irc2chan[/switches] <evennia_channel> ="
+                " <ircnetwork> <port> <#irchannel> <botname>[:typeclass]"
+            )
+            self.msg(string)
+            return
+
+        channel = self.lhs
+        self.rhs = self.rhs.replace("#", " ")  # to avoid Python comment issues
+        try:
+            irc_network, irc_port, irc_channel, irc_botname = [
+                part.strip() for part in self.rhs.split(None, 4)
+            ]
+            irc_channel = f"#{irc_channel}"
+        except Exception:
+            string = "IRC bot definition '%s' is not valid." % self.rhs
+            self.msg(string)
+            return
+
+        botclass = None
+        if ":" in irc_botname:
+            irc_botname, botclass = [part.strip() for part in irc_botname.split(":", 2)]
+        botname = f"ircbot-{irc_botname}"
+        # If path given, use custom bot otherwise use default.
+        botclass = botclass if botclass else bots.IRCBot
+        irc_ssl = "ssl" in self.switches
+
+        # create a new bot
+        bot = AccountDB.objects.filter(username__iexact=botname)
+        if bot:
+            # re-use an existing bot
+            bot = bot[0]
+            if not bot.is_bot:
+                self.msg(f"Account '{botname}' already exists and is not a bot.")
+                return
+        else:
+            try:
+                bot = create.create_account(botname, None, None, typeclass=botclass)
+            except Exception as err:
+                self.msg(f"|rError, could not create the bot:|n '{err}'.")
+                return
+        bot.start(
+            ev_channel=channel,
+            irc_botname=irc_botname,
+            irc_channel=irc_channel,
+            irc_network=irc_network,
+            irc_port=irc_port,
+            irc_ssl=irc_ssl,
+        )
+        self.msg("Connection created. Starting IRC bot.")
+
+
+class CmdIRCStatus(COMMAND_DEFAULT_CLASS):
+    """
+    Check and reboot IRC bot.
+
+    Usage:
+        @ircstatus [#dbref ping | nicklist | reconnect]
+
+    If not given arguments, will return a list of all bots (like
+    irc2chan/list). The 'ping' argument will ping the IRC network to
+    see if the connection is still responsive. The 'nicklist' argument
+    (aliases are 'who' and 'users') will return a list of users on the
+    remote IRC channel.  Finally, 'reconnect' will force the client to
+    disconnect and reconnect again. This may be a last resort if the
+    client has silently lost connection (this may happen if the remote
+    network experience network issues). During the reconnection
+    messages sent to either channel will be lost.
+
+    """
+
+    key = "@ircstatus"
+    locks = "cmd:serversetting(IRC_ENABLED) and perm(ircstatus) or perm(Builder))"
+    help_category = "Comms"
+
+    def func(self):
+        """Handles the functioning of the command."""
+
+        if not self.args:
+            self.msg(_list_bots(self))
+            return
+        # should always be on the form botname option
+        args = self.args.split()
+        if len(args) != 2:
+            self.msg("Usage: @ircstatus [#dbref ping||nicklist||reconnect]")
+            return
+        botname, option = args
+        if option not in ("ping", "users", "reconnect", "nicklist", "who"):
+            self.msg("Not a valid option.")
+            return
+        matches = None
+        if utils.dbref(botname):
+            matches = AccountDB.objects.filter(db_is_bot=True, id=utils.dbref(botname))
+        if not matches:
+            self.msg(
+                "No matching IRC-bot found. Use @ircstatus without arguments to list active bots."
+            )
+            return
+        ircbot = matches[0]
+        channel = ircbot.db.irc_channel
+        network = ircbot.db.irc_network
+        port = ircbot.db.irc_port
+        chtext = f"IRC bot '{ircbot.db.irc_botname}' on channel {channel} ({network}:{port})"
+        if option == "ping":
+            # check connection by sending outself a ping through the server.
+            self.msg(f"Pinging through {chtext}.")
+            ircbot.ping(self.caller)
+        elif option in ("users", "nicklist", "who"):
+            # retrieve user list. The bot must handles the echo since it's
+            # an asynchronous call.
+            self.msg(f"Requesting nicklist from {channel} ({network}:{port}).")
+            ircbot.get_nicklist(self.caller)
+        elif self.caller.locks.check_lockstring(
+            self.caller, "dummy:perm(ircstatus) or perm(Developer)"
+        ):
+            # reboot the client
+            self.msg(f"Forcing a disconnect + reconnect of {chtext}.")
+            ircbot.reconnect()
+        else:
+            self.msg("You don't have permission to force-reload the IRC bot.")
+
+
+# RSS connection
+class CmdRSS2Chan(COMMAND_DEFAULT_CLASS):
+    """
+    link an evennia channel to an external RSS feed
+
+    Usage:
+      @rss2chan[/switches] <evennia_channel> = <rss_url>
+
+    Switches:
+      /disconnect - this will stop the feed and remove the connection to the
+                    channel.
+      /remove     -                                 "
+      /list       - show all rss->evennia mappings
+
+    Example:
+      @rss2chan rsschan = http://code.google.com/feeds/p/evennia/updates/basic
+
+    This creates an RSS reader  that connects to a given RSS feed url. Updates
+    will be echoed as a title and news link to the given channel. The rate of
+    updating is set with the RSS_UPDATE_INTERVAL variable in settings (default
+    is every 10 minutes).
+
+    When disconnecting you need to supply both the channel and url again so as
+    to identify the connection uniquely.
+    """
+
+    key = "@rss2chan"
+    switch_options = ("disconnect", "remove", "list")
+    locks = "cmd:serversetting(RSS_ENABLED) and pperm(Developer)"
+    help_category = "Comms"
+
+    def func(self):
+        """Setup the rss-channel mapping"""
+
+        # checking we have all we need
+        if not settings.RSS_ENABLED:
+            string = """RSS is not enabled. You need to activate it in game/settings.py."""
+            self.msg(string)
+            return
+        try:
+            import feedparser
+
+            assert feedparser  # to avoid checker error of not being used
+        except ImportError:
+            string = (
+                "RSS requires python-feedparser (https://pypi.python.org/pypi/feedparser)."
+                " Install before continuing."
+            )
+            self.msg(string)
+            return
+
+        if "list" in self.switches:
+            # show all connections
+            rssbots = [
+                bot
+                for bot in AccountDB.objects.filter(db_is_bot=True, username__startswith="rssbot-")
+            ]
+            if rssbots:
+                table = self.styled_table(
+                    "|wdbid|n",
+                    "|wupdate rate|n",
+                    "|wev-channel",
+                    "|wRSS feed URL|n",
+                    border="cells",
+                    maxwidth=_DEFAULT_WIDTH,
+                )
+                for rssbot in rssbots:
+                    table.add_row(
+                        rssbot.id, rssbot.db.rss_rate, rssbot.db.ev_channel, rssbot.db.rss_url
+                    )
+                self.msg(table)
+            else:
+                self.msg("No rss bots found.")
+            return
+
+        if "disconnect" in self.switches or "remove" in self.switches or "delete" in self.switches:
+            botname = f"rssbot-{self.lhs}"
+            matches = AccountDB.objects.filter(db_is_bot=True, db_key=botname)
+            if not matches:
+                # try dbref match
+                matches = AccountDB.objects.filter(db_is_bot=True, id=self.args.lstrip("#"))
+            if matches:
+                matches[0].delete()
+                self.msg("RSS connection destroyed.")
+            else:
+                self.msg("RSS connection/bot could not be removed, does it exist?")
+            return
+
+        if not self.args or not self.rhs:
+            string = "Usage: @rss2chan[/switches] <evennia_channel> = <rss url>"
+            self.msg(string)
+            return
+        channel = self.lhs
+        url = self.rhs
+
+        botname = f"rssbot-{url}"
+        bot = AccountDB.objects.filter(username__iexact=botname)
+        if bot:
+            # re-use existing bot
+            bot = bot[0]
+            if not bot.is_bot:
+                self.msg(f"Account '{botname}' already exists and is not a bot.")
+                return
+        else:
+            # create a new bot
+            bot = create.create_account(botname, None, None, typeclass=bots.RSSBot)
+        bot.start(ev_channel=channel, rss_url=url, rss_rate=10)
+        self.msg("RSS reporter created. Fetching RSS.")
+
+
+class CmdGrapevine2Chan(COMMAND_DEFAULT_CLASS):
+    """
+    Link an Evennia channel to an external Grapevine channel
+
+    Usage:
+      @grapevine2chan[/switches] <evennia_channel> = <grapevine_channel>
+      @grapevine2chan/disconnect <connection #id>
+
+    Switches:
+        /list     - (or no switch): show existing grapevine <-> Evennia
+                    mappings and available grapevine chans
+        /remove   - alias to disconnect
+        /delete   - alias to disconnect
+
+    Example:
+        @grapevine2chan mygrapevine = gossip
+
+    This creates a link between an in-game Evennia channel and an external
+    Grapevine channel. The game must be registered with the Grapevine network
+    (register at https://grapevine.haus) and the GRAPEVINE_* auth information
+    must be added to game settings.
+    """
+
+    key = "@grapevine2chan"
+    switch_options = ("disconnect", "remove", "delete", "list")
+    locks = "cmd:serversetting(GRAPEVINE_ENABLED) and pperm(Developer)"
+    help_category = "Comms"
+
+    def func(self):
+        """Setup the Grapevine channel mapping"""
+
+        if not settings.GRAPEVINE_ENABLED:
+            self.msg("Set GRAPEVINE_ENABLED=True in settings to enable.")
+            return
+
+        if "list" in self.switches:
+            # show all connections
+            gwbots = [
+                bot
+                for bot in AccountDB.objects.filter(
+                    db_is_bot=True, username__startswith="grapevinebot-"
+                )
+            ]
+            if gwbots:
+                table = self.styled_table(
+                    "|wdbid|n",
+                    "|wev-channel",
+                    "|wgw-channel|n",
+                    border="cells",
+                    maxwidth=_DEFAULT_WIDTH,
+                )
+                for gwbot in gwbots:
+                    table.add_row(gwbot.id, gwbot.db.ev_channel, gwbot.db.grapevine_channel)
+                self.msg(table)
+            else:
+                self.msg("No grapevine bots found.")
+            return
+
+        if "disconnect" in self.switches or "remove" in self.switches or "delete" in self.switches:
+            botname = f"grapevinebot-{self.lhs}"
+            matches = AccountDB.objects.filter(db_is_bot=True, db_key=botname)
+
+            if not matches:
+                # try dbref match
+                matches = AccountDB.objects.filter(db_is_bot=True, id=self.args.lstrip("#"))
+            if matches:
+                matches[0].delete()
+                self.msg("Grapevine connection destroyed.")
+            else:
+                self.msg("Grapevine connection/bot could not be removed, does it exist?")
+            return
+
+        if not self.args or not self.rhs:
+            string = "Usage: @grapevine2chan[/switches] <evennia_channel> = <grapevine_channel>"
+            self.msg(string)
+            return
+
+        channel = self.lhs
+        grapevine_channel = self.rhs
+
+        botname = "grapewinebot-%s-%s" % (channel, grapevine_channel)
+        bot = AccountDB.objects.filter(username__iexact=botname)
+        if bot:
+            # re-use existing bot
+            bot = bot[0]
+            if not bot.is_bot:
+                self.msg(f"Account '{botname}' already exists and is not a bot.")
+                return
+            else:
+                self.msg(f"Reusing bot '{botname}' ({bot.dbref})")
+        else:
+            # create a new bot
+            bot = create.create_account(botname, None, None, typeclass=bots.GrapevineBot)
+
+        bot.start(ev_channel=channel, grapevine_channel=grapevine_channel)
+        self.msg(f"Grapevine connection created {channel} <-> {grapevine_channel}.")
+
+
+class CmdDiscord2Chan(COMMAND_DEFAULT_CLASS):
+    """
+    Link an Evennia channel to an external Discord channel
+
+    Usage:
+      @discord2chan[/switches]
+      @discord2chan[/switches] <evennia_channel> [= <discord_channel_id>]
+
+    Switches:
+        /list    - (or no switch) show existing Evennia <-> Discord links
+        /remove  - remove an existing link by link ID
+        /delete  - alias to remove
+        /guild   - toggle the Discord server tag on/off
+        /channel - toggle the Evennia/Discord channel tags on/off
+        /start   - tell the bot to start, in case it lost its connection
+
+    Example:
+        @discord2chan mydiscord = 555555555555555
+
+    This creates a link between an in-game Evennia channel and an external
+    Discord channel. You must have a valid Discord bot application
+    ( https://discord.com/developers/applications ) and your DISCORD_BOT_TOKEN
+    must be added to settings. (Please put it in secret_settings !)
+    """
+
+    key = "@discord2chan"
+    aliases = ("discord",)
+    switch_options = (
+        "channel",
+        "delete",
+        "guild",
+        "list",
+        "remove",
+        "start",
+    )
+    locks = "cmd:serversetting(DISCORD_ENABLED) and pperm(Developer)"
+    help_category = "Comms"
+
+    def func(self):
+        """Manage the Evennia<->Discord channel links"""
+
+        if not settings.DISCORD_BOT_TOKEN:
+            self.msg(
+                "You must add your Discord bot application token to settings as DISCORD_BOT_TOKEN"
+            )
+            return
+
+        discord_bot = [
+            bot for bot in AccountDB.objects.filter(db_is_bot=True, username="DiscordBot")
+        ]
+        if not discord_bot:
+            # create a new discord bot
+            bot_class = class_from_module(settings.DISCORD_BOT_CLASS, fallback=bots.DiscordBot)
+            discord_bot = create.create_account("DiscordBot", None, None, typeclass=bot_class)
+            discord_bot.start()
+            self.msg("Created and initialized a new Discord relay bot.")
+        else:
+            discord_bot = discord_bot[0]
+
+        if not discord_bot.is_typeclass(settings.DISCORD_BOT_CLASS, exact=True):
+            self.msg(
+                f"WARNING: The Discord bot's typeclass is '{discord_bot.typeclass_path}'. This does"
+                f" not match {settings.DISCORD_BOT_CLASS} in settings!"
+            )
+
+        if "start" in self.switches:
+            if discord_bot.sessions.all():
+                self.msg("The Discord bot is already running.")
+            else:
+                discord_bot.start()
+                self.msg("Starting the Discord bot session.")
+            return
+
+        if "guild" in self.switches:
+            discord_bot.db.tag_guild = not discord_bot.db.tag_guild
+            self.msg(
+                f"Messages to Evennia |wwill {'' if discord_bot.db.tag_guild else 'not '}|ninclude"
+                " the Discord server."
+            )
+            return
+        if "channel" in self.switches:
+            discord_bot.db.tag_channel = not discord_bot.db.tag_channel
+            self.msg(
+                f"Relayed messages |wwill {'' if discord_bot.db.tag_channel else 'not '}|ninclude"
+                " the originating channel."
+            )
+            return
+
+        if "list" in self.switches or not self.args:
+            # show all connections
+            if channel_list := discord_bot.db.channels:
+                table = self.styled_table(
+                    "|wLink Index|n",
+                    "|wEvennia|n",
+                    "|wDiscord|n",
+                    border="cells",
+                    maxwidth=_DEFAULT_WIDTH,
+                )
+                # iterate through the channel links
+                # load in the pretty names for the discord channels from cache
+                dc_chan_names = discord_bot.attributes.get("discord_channels", {})
+                for i, (evchan, dcchan) in enumerate(channel_list):
+                    dc_info = dc_chan_names.get(dcchan, {"name": dcchan, "guild": "unknown"})
+                    table.add_row(
+                        i, evchan, f"#{dc_info.get('name','?')}@{dc_info.get('guild','?')}"
+                    )
+                self.msg(table)
+            else:
+                self.msg("No Discord connections found.")
+            return
+
+        if "disconnect" in self.switches or "remove" in self.switches or "delete" in self.switches:
+            if channel_list := discord_bot.db.channels:
+                try:
+                    lid = int(self.args.strip())
+                except ValueError:
+                    self.msg("Usage: @discord2chan/remove <link id>")
+                    return
+                if lid < len(channel_list):
+                    ev_chan, dc_chan = discord_bot.db.channels.pop(lid)
+                    dc_chan_names = discord_bot.attributes.get("discord_channels", {})
+                    dc_info = dc_chan_names.get(dc_chan, {"name": "unknown", "guild": "unknown"})
+                    self.msg(
+                        f"Removed link between {ev_chan} and"
+                        f" #{dc_info.get('name','?')}@{dc_info.get('guild','?')}"
+                    )
+                    return
+            else:
+                self.msg("There are no active connections to Discord.")
+                return
+
+        ev_channel = self.lhs
+        dc_channel = self.rhs
+
+        if ev_channel and not dc_channel:
+            # show all discord channels linked to self.lhs
+            if channel_list := discord_bot.db.channels:
+                table = self.styled_table(
+                    "|wLink Index|n",
+                    "|wEvennia|n",
+                    "|wDiscord|n",
+                    border="cells",
+                    maxwidth=_DEFAULT_WIDTH,
+                )
+                # iterate through the channel links
+                # load in the pretty names for the discord channels from cache
+                dc_chan_names = discord_bot.attributes.get("discord_channels", {})
+                results = False
+                for i, (evchan, dcchan) in enumerate(channel_list):
+                    if evchan.lower() == ev_channel.lower():
+                        dc_info = dc_chan_names.get(dcchan, {"name": dcchan, "guild": "unknown"})
+                        table.add_row(i, evchan, f"#{dc_info['name']}@{dc_info['guild']}")
+                        results = True
+                if results:
+                    self.msg(table)
+                else:
+                    self.msg(f"There are no Discord channels connected to {ev_channel}.")
+            else:
+                self.msg("There are no active connections to Discord.")
+            return
+
+        # check if link already exists
+        if channel_list := discord_bot.db.channels:
+            if (ev_channel, dc_channel) in channel_list:
+                self.msg("Those channels are already linked.")
+                return
+        else:
+            discord_bot.db.channels = []
+        # create the new link
+        channel_obj = search.search_channel(ev_channel)
+        if not channel_obj:
+            self.msg(f"There is no channel '{ev_channel}'")
+            return
+        channel_obj = channel_obj[0]
+        discord_bot.db.channels.append((channel_obj.name, dc_channel))
+        channel_obj.connect(discord_bot)
+        if dc_chans := discord_bot.db.discord_channels:
+            dc_channel_name = dc_chans.get(dc_channel, {}).get("name", dc_channel)
+        else:
+            dc_channel_name = dc_channel
+        self.msg(f"Discord connection created: {channel_obj.name} <-> #{dc_channel_name}.")
