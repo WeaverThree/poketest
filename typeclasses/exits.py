@@ -21,9 +21,7 @@ class Exit(ObjectParent, DefaultExit):
 
     def get_display_name(self, looker, **kwargs):
         """
-        Returns a fancy name based on who's looking at this object. In particular, will grey out and
-        cross out destinations that the user does not meet lock on. This doesn't guarentee they're
-        allowed to go that way, of course, but it should usually be the way we block access I think.
+        This bypasses the normal name coloring system. That's probably fine.
         """
         name = self.name
         aliases = self.aliases.all()

@@ -93,4 +93,10 @@ I'm just making this public to make things easier.
         -ic portal
     -staff home
     -jail
-    
+
+
+- Issue with the table used in InventoryCmd. I think it's because a single character is colored at
+  the start of the line in the table its using. I worked around this by putting item quantities in
+  parens for now.
+
+  - Something is up with the stacking code re aliases.

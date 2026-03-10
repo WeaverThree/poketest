@@ -228,7 +228,7 @@ class Character(ObjectParent, DefaultCharacter):
         """Is this a player character. Better than using instanceof."""
         return False
     
-    def get_display_name(self, looker=None):
+    def color_name(self, name, looker=None):
         """
         Color this character name based on what their account's permissions are,
         or otherwise what type of character it is. Staff is always staff. Quelling
@@ -259,8 +259,8 @@ class Character(ObjectParent, DefaultCharacter):
         else:
             color = "|G"
 
-        return "{}{}{}".format(color, self.name, "|n" if color else "")
-        
+        return f"{color}{name}{"|n" if color else ""}"
+
 
 class PlayerCharacter(Character):
     """
