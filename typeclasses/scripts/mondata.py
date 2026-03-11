@@ -101,6 +101,7 @@ class MonData(Script):
     monnames = NAttributeProperty([])
     
     moves = NAttributeProperty({})
+    movenames = NAttributeProperty(set())
     natures = NAttributeProperty({})
 
     lookup_statlist = {
@@ -331,10 +332,24 @@ class MonData(Script):
             if movetype not in self.ndb.typenames:
                 raise ValueError(f"No such type '{movetype}' on row {row}")
             
+            if name in self.moves:
+                logger.log_warn(f"Move {name} duplicated in dataset.")
+            
+            if category == "Physical":
+                cattoken = "|[#EB5628|w PHYS |n"
+            elif category == "Special":
+                cattoken = "|[#375AB2|w SPEC |n"
+            elif category == "Status":
+                cattoken = "|[#828282|w STAT |n"
+            else:
+                cattoken = "|[#68A090|w ???? |n"
+
             self.moves[name] = {
                 'moveno':moveno, 'name':name, 'priority':priority, 'type':movetype, 'category':category,
                 'uses':uses, 'potentcy':potentcy, 'accuracy':accuracy, 'nonstandard':nonstandard,
+                'category_token': cattoken,
             }
+            self.movenames.add(name)
 
 
     def load_nature_list(self, csvdata):

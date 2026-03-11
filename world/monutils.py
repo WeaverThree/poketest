@@ -1,7 +1,8 @@
 
-
+import itertools
 
 from evennia import GLOBAL_SCRIPTS
+from evennia.utils import evtable
 
 
 def type_vuln_table(type1, type2="", show_header=True, show_nochange=True):
@@ -81,6 +82,7 @@ def type_vuln_table(type1, type2="", show_header=True, show_nochange=True):
 
     return '\n'.join(out)
 
+
 def get_display_mon_name(mon):
     from typeclasses.characters import Character
     if isinstance(mon, Character):
@@ -95,6 +97,7 @@ def get_display_mon_name(mon):
     subtype = f"|Y{subtype}|n " if subtype else ""
     form = f"|R{form}|n " if form else ""
     return f"{form}{subtype}|w{name}|n"
+
 
 def get_display_mon_type(mon):
     from typeclasses.characters import Character
@@ -120,3 +123,78 @@ def get_display_mon_banner(mon):
         return f"{get_display_mon_type(mon)} #{mon.dexno if mon.dexno else '?'} {get_display_mon_name(mon)}"
     else:
         return f"{get_display_mon_type(mon)} #{mon['dexno']} {get_display_mon_name(mon)}"
+
+
+def moves_table(movelist, usedlist=None):
+    """
+    Returns a table of nicely formated moves. If usedlist is provided, it will show remaining moves.
+
+    Usedlist should be a list of integers corresponding to the listed moves. 
+    """
+        
+    mondata = GLOBAL_SCRIPTS.mondata
+
+    names = []
+    movetypes = []
+    categories = []
+    priorities = []
+    useslist = []
+    potentcies = []
+    accuracies = []
+
+    usedlist = usedlist if usedlist else []
+
+    for move, used in itertools.zip_longest(movelist, usedlist):
+        names.append(move['name'])
+        movetypes.append(mondata.types[move['type']]['colortoken'])
+        categories.append(move['category_token'])
+
+        prio = move['priority']
+        if prio:
+            prio = f"|b+{prio}|n" if prio > 0 else f"|r{prio}|n"
+        else:
+            prio = ""
+        priorities.append(prio)
+
+        uses = move['uses']
+        if used is not None:
+            remain = uses - used
+            if remain <= 0:
+                color = '|[R|X'
+            elif remain < uses / 4:
+                color = '|r'
+            elif remain < uses / 2:
+                color = '|y'
+            else:
+                color = ''
+            remaintext = f"{color}{remain}{'|n' if color else ''}/"
+        else:
+            remaintext = ''
+        useslist.append(f"{remaintext}{uses}")
+
+        pot = move['potentcy']
+        pot = pot if pot else "---"
+        pot = "∞" if pot == 999 else pot
+        potentcies.append(pot)
+
+        acc = move['accuracy']
+        acc = acc if acc else "---"
+        acc = "∞" if acc == 999 else acc
+        accuracies.append(acc)
+    
+    sortlist = sorted(zip(names,movetypes,categories,priorities,useslist,potentcies,accuracies)) 
+    
+    table = evtable.EvTable(
+        "|wMove|n","|w Type|n","|w Cat|n","|wPrio|n","|wUses|n","|wPow|n","|wAcc|n",
+        table=[list(col) for col in zip(*sortlist)],
+        border_width=0,
+    )
+    table.reformat_column(0, width=20)
+    table.reformat_column(1, align="a")
+    table.reformat_column(2, align="a")
+    table.reformat_column(3, align="r")
+    table.reformat_column(4, align="r")
+    table.reformat_column(5, align="r")
+    table.reformat_column(6, align="r")
+
+    return table

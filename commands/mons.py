@@ -7,7 +7,7 @@ from .command import MuxCommand, Command
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils import evtable, string_suggestions
 
-from world.monutils import type_vuln_table, get_display_mon_name, get_display_mon_type, get_display_mon_banner
+from world.monutils import type_vuln_table, get_display_mon_banner, moves_table
 
 
 class CmdMonTypes(Command):
@@ -99,6 +99,8 @@ class CmdMonTypes(Command):
 
 class CmdRandMons(Command):
     """
+    For inspiration.
+
     Usage:
         +randmons [count]
     """
@@ -117,6 +119,9 @@ class CmdRandMons(Command):
             except ValueError:
                 self.caller.msg(self._usage)
                 return
+            if count <= 0:
+                self.caller.msg(self._usage)
+                return
         else:
             count = 5
         
@@ -129,6 +134,78 @@ class CmdRandMons(Command):
             num = f"{idx+1}" if count < 10 else f"{idx+1:2d}"
                 
             self.caller.msg(f" - {num} - {get_display_mon_banner(mon)}")
-            
 
+
+            
+class CmdMoveLookup(Command):
+    """
+    For checking the data available.
+
+    Usage:
+        +movelookup <name>
+    """
+    key = '+movelookup'
+    locks = "cmd:all()"
+    help_category = "Mons"
+    
+    _usage = "Usage: +movelookup <name>"
+
+    def func(self):
+        mondata = GLOBAL_SCRIPTS.mondata
+
+        movename = self.args.strip()
+
+        if not movename:
+            self.caller.msg(self._usage)
+            return
+        
+        if movename in mondata.moves:
+            moves = [mondata.moves[movename]]
+            errorstring = ""
+        else:
+            movenames = string_suggestions(movename, mondata.movenames, maxnum=5)
+            moves = [mondata.moves[movename] for movename in movenames]
+            errorstring = f"Could not find move '{movename}', is it any of these?\n"
+        
+        table = moves_table(moves)
+
+        self.caller.msg(f"\n{errorstring}{table}")
+
+
+class CmdRandMoves(Command):
+    """
+    For inspiration.
+
+    Usage:
+        +randmoves [count]
+    """
+    key = '+randmoves'
+    locks = "cmd:all()"
+    help_category = "Mons"
+    
+    _usage = "Usage: +randmoves [count]"
+
+    def func(self):
+        mondata = GLOBAL_SCRIPTS.mondata
+
+        if self.args:
+            try:
+                count = int(self.args.strip())
+            except ValueError:
+                self.caller.msg(self._usage)
+                return
+            if count <= 0:
+                self.caller.msg(self._usage)
+                return
+        else:
+            count = 5
+        
+        count = min(count,50)
+
+        movenames = random.sample(sorted(mondata.movenames), count)
+        moves = [mondata.moves[movename] for movename in movenames]
+
+        table = moves_table(moves)
+
+        self.caller.msg(f"\n|w - - - {count} Random Moves - - -|n\n{table}")
 

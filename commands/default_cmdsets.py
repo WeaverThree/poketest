@@ -89,6 +89,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(system_overrides.CmdTime())
         self.add(mons.CmdMonTypes()) 
         self.add(mons.CmdRandMons())
+        self.add(mons.CmdMoveLookup())
+        self.add(mons.CmdRandMoves())
         self.add(chargen_admin.CmdAdminSetSpecies())
         self.add(chargen_admin.CmdAdminSetNature())
         self.add(chargen_admin.CmdAdminBuyIVs())

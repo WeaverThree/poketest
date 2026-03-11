@@ -14,14 +14,14 @@ I'm just making this public to make things easier.
     - Spoof command
     - Change RP trap system to use time since someone emitted text into a room rather than their unidle presence
     - Implement separate comms idle time perhaps
+    - IC idle time
     - Restyle chan, chan/all
     - track wordcount emitted into the world
 - ConnectInfo is leaking peoples IPs and shit
 - Character creation system
 
 - Stats.
-    - Pokémon 6 stats
-        - EVs
+    - EVs
     - Known moves
     - Equipped moves
     - IC Wordcount
@@ -35,6 +35,7 @@ I'm just making this public to make things easier.
 - Dice roller
 - +ic +ooc
 - skill swapper object
+
 - RP vote system
     - number of votes per day
     - vote for someone once per day
@@ -72,7 +73,6 @@ I'm just making this public to make things easier.
 - bitch at you if room desc is too short
 
 - start in AUP room
-    - staff list command. shows offline staff, with tag about what they do
 
 
 - must be builder to build. might be able to desc owned rooms but not build from them
@@ -93,10 +93,24 @@ I'm just making this public to make things easier.
         -ic portal
     -staff home
     -jail
+        - jail command
 
 
 - Issue with the table used in InventoryCmd. I think it's because a single character is colored at
   the start of the line in the table its using. I worked around this by putting item quantities in
   parens for now.
 
-  - Something is up with the stacking code re aliases.
+- Better exceptions for reading csv files in mondata?
+
+- Move validation inside chargen functions in Character? Probably not but thought.
+
+- Economy
+    - Consumables
+        - Reusable item references?
+    - Inventory
+        - 6 Items Equipped
+        - Rest are considered banked
+    - Room rent for rogues?
+    - Rank based rooms for guild?
+    - Shop / business ownership, for rogues?
+    
