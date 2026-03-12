@@ -109,6 +109,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(userlisting.CmdStaffInfo())
         self.add(ooc.CmdOOC())
         self.add(building.CmdZone())
+        self.add(building.CmdSetSpecialRoom())
         self.add(dice.CmdDice())
 
 
