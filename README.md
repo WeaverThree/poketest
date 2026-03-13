@@ -48,13 +48,8 @@ I'm just making this public to make things easier.
     find command
     special abilities
 
-- XP gain:
-
-
 - Player character death 
     - returned to home after time period with 1hp and 
-
-- uppercase names required
 
 - In character home. Home takes you there
 - see unlogged characters
@@ -63,6 +58,7 @@ I'm just making this public to make things easier.
 
 - start in AUP room
 
+- System for denying unlogged player target of commands.
 
 - must be builder to build. might be able to desc owned rooms but not build from them
 
@@ -71,10 +67,7 @@ I'm just making this public to make things easier.
 - helper / plotrunner
     - can make NPCs and puppets and stuff
     - can't build, modify descs
-
-- authorization keyring object
-- room claim system, lockable doors, auto updating exit names
-
+    
 - ooc nexus
     -master room not needed
     -character home
@@ -84,14 +77,12 @@ I'm just making this public to make things easier.
     -jail
         - jail command
 
-
-- Issue with the table used in InventoryCmd. I think it's because a single character is colored at
-  the start of the line in the table its using. I worked around this by putting item quantities in
-  parens for now. . . . Same problem happens with EvTable. I got around it by using an ASCII Null \000
-
 - Better exceptions for reading csv files in mondata?
 
 - Move validation inside chargen functions in Character? Probably not but thought.
+
+- authorization keyring object
+- room claim system, lockable doors, auto updating exit names
 
 - Economy
     - Consumables
@@ -102,8 +93,14 @@ I'm just making this public to make things easier.
     - Room rent for rogues?
     - Rank based rooms for guild?
     - Shop / business ownership, for rogues?
-    
+
+
+# Notes
 
 - Max ability len = 16 characters
 - Max move len = 27 characters "Soul-Stealing 7-Star Strike", a Z-move
 - Max move len w/o specials = 16 characters "Parabolic Charge"
+
+- Issue with the table used in InventoryCmd. I think it's because a single character is colored at
+  the start of the line in the table its using. I worked around this by putting item quantities in
+  parens for now. . . . Same problem happens with EvTable. I got around it by using an ASCII Null \000

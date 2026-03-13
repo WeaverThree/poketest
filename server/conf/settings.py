@@ -25,9 +25,13 @@ import math
 # Use the defaults from Evennia unless explicitly overridden
 from evennia.settings_default import *
 
-# --- MonMU specific settings --- 
+######################################################################
+# MonMU specific settings
+######################################################################
 
+# Currently only applies to newly species-set characters
 CHARACTER_IV_TOKEN_BUDGET = math.ceil((6 * 16) / 3)
+
 RP_TRAP_MOVE_DELAY = 15 # Seconids
 RP_TRAP_IDLE_TIME = 60 * 5 
 GENERAL_IDLE_TIME = 60 * 10 # How long until names go dim from idle
@@ -45,10 +49,13 @@ VALID_ROOM_TAGS = [
 # System will use these tagged rooms if they exist over START_LOCATION and DEFAULT_HOME, which can
 # be left set to #2 as a final fallback
 
-TAG_START_LOCATION = "spawn"
 TAG_DEFAULT_HOME = "defaulthome"
+TAG_JAIL_LOCATION = "jail"
+TAG_OOC_TARGET = "ooctarget"
+TAG_SLEEPER_SWEEPER_DEST = "sleeperhome"
+TAG_START_LOCATION = "spawn"
 
-
+REGISTRATION_PASSTOKEN = None # Please put me in secret_settings.py - string with no spaces
 
 ######################################################################
 # Evennia base server config
@@ -75,7 +82,6 @@ GLOBAL_SCRIPTS = {
 
 WEBSERVER_ENABLED = True
 NEW_ACCOUNT_REGISTRATION_ENABLED = False
-REGISTRATION_PASSTOKEN = None # Please put me in secret_settings.py - string with no spaces
 
 
 TIME_ZONE = "America/Los_Angeles"

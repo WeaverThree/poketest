@@ -48,7 +48,7 @@ class CmdUnconnectedCreate(MuxCommand):
         Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
 
         # We're just not allowing spaces in passwords either.
-        parts = args.split()
+        parts = [arg.strip() for arg in args.split()]
 
         if not settings.NEW_ACCOUNT_REGISTRATION_ENABLED:
             if len(parts) != 3:
@@ -75,6 +75,13 @@ class CmdUnconnectedCreate(MuxCommand):
                 return
             username, password, _ = parts
 
+        if username[0].islower():
+            session.msg(
+                "Please start your name with a capital letter. " 
+                "This is going to be your character name, afterall."
+            )
+            return
+
         # pre-normalize username so the user know what they get
         non_normalized_username = username
         username = Account.normalize_username(username)
@@ -90,7 +97,7 @@ class CmdUnconnectedCreate(MuxCommand):
             "\nIs this what you intended? [Y]/N?"
         )
         if answer.lower() in ("n", "no"):
-            session.msg("Aborted.")
+            session.msg("|xAborted.|n")
             return
 
         # everything's ok. Create the new player account.

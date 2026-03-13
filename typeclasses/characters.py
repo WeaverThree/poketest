@@ -95,6 +95,11 @@ class Character(ObjectParent, DefaultCharacter):
     moves_equipped = AttributeProperty({})
 
 
+    last_puppeted = AttributeProperty(0)
+
+
+
+
     def return_appearance(self, looker=None, **kwargs):
         
         header = header_two_slot(80,

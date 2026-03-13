@@ -33,6 +33,9 @@ CONNECTION_SCREEN = f"""
  If you need to create an account, type (without the <>'s):
       |wcreate <username> <password> [registration passtoken]|n
 
+ Your account name is also your character name.
+ One character per account. Multiple accounts per player.
+
  No spaces allowed in username or in password.
  Enter |whelp|n for more info. |wlook|n will re-show this screen.
 |R--------------------------------------------------------------|n"""
