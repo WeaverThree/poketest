@@ -25,8 +25,8 @@ class Room(ObjectParent, DefaultRoom):
 
     def at_pre_object_receive(self, arriving_object, source_location, **kwargs):
 
-        if not arriving_object.approved and not arriving_object.account.permissions.check('Builder'):
-            if arriving_object.is_typeclass(PlayerCharacter):
+        if arriving_object.is_typeclass(PlayerCharacter):
+            if not arriving_object.approved and not arriving_object.account.permissions.check('Builder'):
                 zone = self.tags.get(category="Zone", return_list=True)
                 if zone and zone[0] != 'ooc':
                     arriving_object.msg(

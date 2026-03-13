@@ -547,8 +547,6 @@ class PlayerCharacter(Character):
             else:
                 logger.log_err(f"Default channel '{chan_info}' is missing a 'key' field!")
 
-
-
         return super().at_object_creation() # Not sure if return part is needed but
 
 
@@ -566,6 +564,7 @@ class PlayerCharacter(Character):
                 return super().at_pre_move(dest, move_type, **kwargs)
         else:
             return super().at_pre_move(dest, move_type, **kwargs)
+
 
     def at_post_move(self, src, **kwargs):
         active_players_in_room = [char 
