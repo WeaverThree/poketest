@@ -18,7 +18,7 @@ from django.conf import settings # type: ignore
 from evennia import AttributeProperty
 from evennia.comms.models import ChannelDB
 from evennia.objects.objects import DefaultCharacter
-from evennia.utils import logger, display_len
+from evennia.utils import logger, display_len, time_format
 from evennia.utils.ansi import ANSI_PARSER
 
 from .objects import ObjectParent
@@ -26,9 +26,10 @@ from .objects import ObjectParent
 from world.utils import header_two_slot, anyone_notice
 from world.monutils import get_display_mon_banner, moves_table
 
-_IV_TOKEN_BUDGET = math.ceil((6 * 16) / 3)
-_MOVE_DELAY = 15
-_IDLE_TIME = 60*5
+_IV_TOKEN_BUDGET = settings.CHARACTER_IV_TOKEN_BUDGET
+_RP_TRAP_MOVE_DELAY = settings.RP_TRAP_MOVE_DELAY
+_RP_TRAP_IDLE_TIME = settings.RP_TRAP_IDLE_TIME
+_GENERAL_IDLE_TIME = settings.GENERAL_IDLE_TIME
 
 _display_statname = {
     'health': 'Health',
@@ -64,7 +65,7 @@ def _statline(statname, char):
 
 class Character(ObjectParent, DefaultCharacter):
     """
-    A general character. Contains functionality that's important for NPCs and PCs alike.
+    A monmorph character. Contains functionality that's important for NPCs and PCs alike.
     """
     
     species = AttributeProperty("")
@@ -110,7 +111,10 @@ class Character(ObjectParent, DefaultCharacter):
             if display_len(desc) < self.DESC_LENGTH_REQ:
                 anyone_notice(looker, "Your description should be longer.")
 
-        return f"\n{header}\n{statblock}\n{desc}"
+        tmp_last_talk_time = "Last Talk: " + time_format(time.time() - self.last_ic_talk_time)
+        tmp_last_talk_time += f" Wordcount here: {self.ic_wordcount}"
+
+        return f"\n{tmp_last_talk_time}\n{header}\n{statblock}\n{desc}"
     
 
     def get_statblock(self, looker=None, **kwargs):
@@ -267,7 +271,7 @@ class Character(ObjectParent, DefaultCharacter):
         """
         if not self.has_account:
             return True
-        return self.idle_time > _IDLE_TIME
+        return self.idle_time > _GENERAL_IDLE_TIME
     
     @property
     def is_comms_idle(self):
@@ -277,11 +281,7 @@ class Character(ObjectParent, DefaultCharacter):
         # TODO: Implement comms idle system
         return self.is_idle
     
-    @property
-    def is_player_character(self):
-        """Is this a player character. Better than using instanceof."""
-        return False
-    
+
     def color_name(self, name, looker=None):
         """
         Color this character name based on what their account's permissions are,
@@ -292,7 +292,7 @@ class Character(ObjectParent, DefaultCharacter):
         """
 
         color = ""
-        if not self.is_player_character:
+        if not self.is_typeclass(PlayerCharacter):
             color = "|x"
         elif looker == self or looker == self.account:
             color="|420"
@@ -330,6 +330,10 @@ class PlayerCharacter(Character):
     auditlog = AttributeProperty([])
     whostatus = AttributeProperty("")
     stafftag = AttributeProperty("")
+
+    last_ic_talk_time = AttributeProperty(0, category="talkmonitor")
+    move_lock_end_time = AttributeProperty(0, category="talkmonitor")
+    ic_wordcount = AttributeProperty(0, category="talkmonitor")
 
     DESC_LENGTH_REQ = 500
     
@@ -433,10 +437,10 @@ class PlayerCharacter(Character):
             self.msg(msg)
 
 
-    @property
-    def is_player_character(self):
-        """Is this a player character. Better than using instanceof."""
-        return True
+    @property 
+    def ic_idle_time(self):
+        """How long since this character said something in character."""
+        return time.time() - self.last_ic_talk_time
 
     def at_object_creation(self):
         """
@@ -445,6 +449,9 @@ class PlayerCharacter(Character):
         """
         
         self.logaudit(f"{self.name} created.")
+
+        # Not real but want to have something that isn't the start of the universe
+        self.last_ic_talk_time = time.time()
 
         # For the character-focused channel system
         self.locks.add("msg:all()")
@@ -482,11 +489,11 @@ class PlayerCharacter(Character):
     def at_post_move(self, src, **kwargs):
         active_players_in_room = [char 
                 for char in PlayerCharacter.objects.filter(Q(db_location=self.location) & ~ Q(db_key=self)) 
-                if char.idle_time and char.idle_time < _IDLE_TIME]
+                if char.idle_time and char.idle_time < _RP_TRAP_IDLE_TIME]
         if active_players_in_room:
-            self.ndb.movelock = time.time() + _MOVE_DELAY
+            self.ndb.movelock = time.time() + _RP_TRAP_MOVE_DELAY
             self.register_post_command_message(
-                "|MPlayer activity detected|n, locking movement for {} seconds.".format(_MOVE_DELAY)
+                "|MPlayer activity detected|n, locking movement for {} seconds.".format(_RP_TRAP_MOVE_DELAY)
             )
         else:
             self.ndb.movelock = None;

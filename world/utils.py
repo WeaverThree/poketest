@@ -7,6 +7,8 @@ _MU_NEWLINE_RE = re.compile(r"%[rRnN]", re.MULTILINE)
 _MU_TAB_RE = re.compile(r"%[tT]", re.MULTILINE)
 _MU_BLANK_RE = re.compile(r"%[bB]", re.MULTILINE)
 
+_MULTI_NEWLINE_RE = re.compile(r"\|/|\n")
+
 def replace_mush_escapes(msg):
     """
     Handle MUSH special characters with evennia ones. Replaces %r->|/, %b->|_, %t->|-.
@@ -18,6 +20,18 @@ def replace_mush_escapes(msg):
     msg = _MU_BLANK_RE.sub("|_", msg)
     return msg
 
+
+def split_on_all_newlines(text):
+    """Splits the incoming text on |/ and newline characters. More will be added if nessecary."""
+    return _MULTI_NEWLINE_RE.split(text)
+
+def get_wordcount(text):
+    total = 0
+    print(text)
+    for para in split_on_all_newlines(text):
+        print(para)
+        total += len(para.strip().split())
+    return total
 
 def anyone_notice(target, message):
     """Error message for anyone to see. Registers for display after command."""

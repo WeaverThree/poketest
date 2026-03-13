@@ -29,6 +29,7 @@ from evennia.accounts.accounts import DefaultAccount, DefaultGuest
 from django.conf import settings
 from django.utils.translation import gettext as _
 
+from evennia import AttributeProperty
 from evennia.comms.models import ChannelDB
 from evennia.server.signals import (
     SIGNAL_ACCOUNT_POST_CREATE,
@@ -67,6 +68,8 @@ class Account(DefaultAccount):
     can connect to a Character Object in order to "enter" the
     game.
     """
+    
+    bitching_betty_messages = AttributeProperty([])
 
     @classmethod
     def create(cls, *args, **kwargs):
@@ -214,10 +217,7 @@ class Account(DefaultAccount):
 
     def register_post_command_message(self, message):
         """Register message to be sent at the end of the current command."""
-        if self.ndb.post_command_messages:
-            self.ndb.post_command_messages.append(message)
-        else:
-            self.ndb.post_command_messages = [message]
+        self.bitching_betty_messages.append(message)
 
 
 class Guest(DefaultGuest):

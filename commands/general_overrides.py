@@ -1,6 +1,10 @@
+import time
+
 from .command import MuxCommand
 
 from evennia.utils import utils
+
+from world.utils import get_wordcount, split_on_all_newlines
 
 
 class CmdPose(MuxCommand):
@@ -41,16 +45,32 @@ class CmdPose(MuxCommand):
             args = " %s" % args.strip()
         self.args = args
 
+
     def func(self):
         """Hook function"""
         if not self.args:
-            msg = "Do something, not nothing."
-            self.msg(msg)
+            self.msg("Do something, not nothing.")
         else:
             msg = "{sender}" + self.args
+
+            paragraphs = split_on_all_newlines(msg)
+            out = [paragraphs[0]]
+
+            for paragraph in paragraphs[1:]:
+                if paragraph:
+                    paragraph += " ({sender})"
+                out.append(paragraph)
+
             self.caller.location.msg_contents(
-                text=(msg, self.args, {"type": "pose"}),
-                 mapping={'sender':self.caller}, from_obj=self.caller)
+                text=('\n'.join(out), self.args, {"type": "pose"}),
+                mapping={'sender':self.caller}, from_obj=self.caller
+            )
+            wordcount = get_wordcount(self.args)
+            self.caller.last_ic_talk_time = time.time()
+            self.caller.location.last_ic_talk_time_loc = time.time()
+            self.caller.location.ic_wordcount_loc += wordcount
+            self.caller.ic_wordcount += wordcount
+
             
 
 class CmdHome(MuxCommand):

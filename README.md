@@ -9,26 +9,19 @@ I'm just making this public to make things easier.
 # Todo list!
 
 - Probably need to customize all of the emitting functions anyway.
-    - Third person command output for everyone
-    - Name colors on command output (partial)
-    - Spoof command
-    - Change RP trap system to use time since someone emitted text into a room rather than their unidle presence
     - Implement separate comms idle time perhaps
-    - IC idle time
     - Restyle chan, chan/all
-    - track wordcount emitted into the world
 - ConnectInfo is leaking peoples IPs and shit
 - Character creation system
 
 - Stats.
     - EVs
-    - IC Wordcount
     - Affiliation
         - Faction (Guild, Rogue, Merc, Unaffiliated)
         - Rank
         - Subfaction
     - Abilities
-    - Pronouns
+    - Shortdesc
     - Orientation
     - Player
 - +ic +ooc

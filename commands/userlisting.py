@@ -44,6 +44,7 @@ class CmdWho(MuxCommand):
         names = []
         durations = []
         idles = []
+        icidles = []
         locations = []
         modes = []
         statuses = []
@@ -66,6 +67,7 @@ class CmdWho(MuxCommand):
             names.append(utils.crop(name, width=25))
             durations.append(utils.time_format(time.time() - session.conn_time, 1))
             idles.append(utils.time_format(time.time() - session.cmd_last_visible, 0))
+            icidles.append(utils.time_format(puppet.ic_idle_time, 0))
             locations.append(puppet.location.key if puppet and puppet.location else "|[R|X---|n")
             modes.append(puppet.player_mode)
             statuses.append(utils.crop(puppet.whostatus,50,"…") if puppet else "")
@@ -80,6 +82,7 @@ class CmdWho(MuxCommand):
                 "|wName|n",
                 "|wOn for|n",
                 "|wIdle|n",
+                "|wIcIdle|n",
                 "|wLocation|n",
                 "|wMode|n",
                 "|wStatus|n",
@@ -89,7 +92,7 @@ class CmdWho(MuxCommand):
             )
 
             table = evtable.EvTable(
-                *header, table=(names,durations,idles,locations,modes,statuses,cmds,protocols,hosts),
+                *header, table=(names,durations,idles,icidles, locations,modes,statuses,cmds,protocols,hosts),
                 border_width=0,                              
             )
 
@@ -98,13 +101,14 @@ class CmdWho(MuxCommand):
                 "|wName|n",
                 "|wOn for|n",
                 "|wIdle|n",
+                "|wIcIdle|n",
                 "|wLocation|n",
                 "|wMode|n",
                 "|wStatus|n",
             )
 
             table = evtable.EvTable(
-                *header, table=(names,durations,idles,locations,modes,statuses),
+                *header, table=(names,durations,idles, icidles, locations,modes,statuses),
                 border_width=0,                                  
             )
 

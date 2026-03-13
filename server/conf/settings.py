@@ -20,8 +20,19 @@ secret_settings.py.
 
 """
 
+import math
+
 # Use the defaults from Evennia unless explicitly overridden
 from evennia.settings_default import *
+
+# --- MonMU specific settings --- 
+
+CHARACTER_IV_TOKEN_BUDGET = math.ceil((6 * 16) / 3)
+RP_TRAP_MOVE_DELAY = 15 # Seconids
+RP_TRAP_IDLE_TIME = 60 * 5 
+GENERAL_IDLE_TIME = 60 * 10 # How long until names go dim from idle
+
+
 
 ######################################################################
 # Evennia base server config
@@ -67,7 +78,7 @@ MULTISESSION_MODE = 2
 
 CMD_IGNORE_PREFIXES = ""
 
-
+# --- Channel Settings ---
 
 # The mudinfo channel is a read-only channel used by Evennia to replay status messages, connection info etc to staff.
 # The superuser will automatically be subscribed to this channel. If set to None, the channel is disabled and status

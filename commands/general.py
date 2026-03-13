@@ -1,10 +1,8 @@
 
-import re
+import time
 
 from .command import Command
-
-_MULTISPLIT = re.compile(r"\|/|\n")
-
+from world.utils import split_on_all_newlines, get_wordcount
 
 class CmdOOC(Command):
     """
@@ -76,7 +74,7 @@ class CmdSpoof(Command):
             return
         
         out = []
-        paragraphs = _MULTISPLIT.split(args)
+        paragraphs = split_on_all_newlines(args)
 
         for paragraph in paragraphs:
             if paragraph:
@@ -85,3 +83,10 @@ class CmdSpoof(Command):
             out.append(paragraph)
 
         self.caller.location.msg_contents('\n'.join(out), mapping={'sender': self.caller})
+
+        wordcount = get_wordcount(args)
+
+        self.caller.location.last_ic_talk_time_loc = time.time()
+        self.caller.last_ic_talk_time = time.time()
+        self.caller.location.ic_wordcount_loc += wordcount
+        self.caller.ic_wordcount += wordcount

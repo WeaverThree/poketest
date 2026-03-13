@@ -19,15 +19,15 @@ def _process_post_messages(caller):
     if not caller:
         # Connecting without an account seems to put us here with no caller.
         return
-    caller = caller.account if hasattr(caller, "account") else caller
-    if not caller:
+    account = caller.account if hasattr(caller, "account") else caller
+    if not account:
         # Or here x.x
         return
-    messages = caller.ndb.post_command_messages
+    messages = account.bitching_betty_messages
     if messages:
         for message in messages:
-            caller.msg(message)
-        caller.ndb.post_command_messages = None
+            account.msg(message)
+        account.bitching_betty_messages = []
 
 
 class MuxCommand(BaseMuxCommand):

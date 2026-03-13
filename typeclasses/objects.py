@@ -16,10 +16,11 @@ from collections import defaultdict
 import inflect 
 from django.utils.translation import gettext as _
 
+from evennia import AttributeProperty
 from evennia.objects.objects import DefaultObject
-from evennia.utils import evtable, ansi, group_objects_by_key_and_desc, make_iter, display_len
+from evennia.utils import evtable, ansi, group_objects_by_key_and_desc, make_iter, display_len, time_format
 
-from world.utils import dev_notice, builder_notice, replace_mush_escapes, header_two_slot
+from world.utils import builder_notice, replace_mush_escapes, header_two_slot, get_wordcount, split_on_all_newlines
 
 _INFLECT = inflect.engine()
 _EXIT_NAME_ORDER = ["[N]", "[NE", "[E]", "[SE", "[S]", "[SW", "[W]", "[NW", "[U]", "[D]", "[I]", "[O]"]
@@ -43,6 +44,10 @@ class ObjectParent:
     This is a mixin that can be used to override *all* entities inheriting at
     some distance from DefaultObject (Objects, Exits, Characters and Rooms).
     """
+
+    # This goes here so we don't have to worry about if we're contained in a room
+    last_ic_talk_time_loc = AttributeProperty(0, category="talkmonitor")
+    ic_wordcount_loc = AttributeProperty(0, category="talkmonitor")
 
     DESC_LENGTH_REQ = 0
 
@@ -215,7 +220,10 @@ class ObjectParent:
         looktable.reformat_column(1,width=25)
         looktable.reformat_column(2,width=30)
 
-        return f"\n{header}\n{desc[0]}{feature_line}\n\n{looktable}\n"
+        tmp_last_talk_time = "Last Talk: " + time_format(time.time() - self.last_ic_talk_time_loc)
+        tmp_last_talk_time += f" Wordcount here: {self.ic_wordcount_loc}"
+
+        return f"\n{header}\n{tmp_last_talk_time}\n{desc[0]}{feature_line}\n\n{looktable}\n"
     
 
     def at_say(
@@ -270,6 +278,9 @@ class ObjectParent:
             - {location}: the location where object is.
 
         """
+
+        from .characters import PlayerCharacter
+
         msg_type = "say"
         msg_self = _('{self} says, "|n{speech}|n"') if msg_self is True else msg_self
         msg_location = msg_location or _('{object} says, "{speech}"')
@@ -278,6 +289,10 @@ class ObjectParent:
         custom_mapping = kwargs.get("mapping", {})
         receivers = make_iter(receivers) if receivers else None
         location = self.location
+
+        # We don't allow newlines in SAY type messages because they're wrapped in " " and we don't
+        # want anything silly to happen with the formatting or anything...
+        message = ' '.join(split_on_all_newlines(message))
 
         if msg_self:
             self_mapping = {
@@ -343,9 +358,12 @@ class ObjectParent:
                 exclude=exclude,
                 mapping=location_mapping,
             )
-
-
-
+            wordcount = get_wordcount(message)
+            self.location.last_ic_talk_time_loc = time.time()
+            self.location.ic_wordcount_loc += wordcount
+            if self.is_typeclass(PlayerCharacter):
+                self.last_ic_talk_time = time.time()
+                self.ic_wordcount += wordcount  
 
 
 class Object(ObjectParent, DefaultObject):
