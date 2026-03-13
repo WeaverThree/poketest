@@ -12,8 +12,8 @@ import time
 import random
 import math
 
-from django.db.models import Q  # type: ignore
-from django.conf import settings # type: ignore
+from django.db.models import Q 
+from django.conf import settings
 
 from evennia import AttributeProperty
 from evennia.comms.models import ChannelDB
@@ -23,7 +23,7 @@ from evennia.utils.ansi import ANSI_PARSER
 
 from .objects import ObjectParent
 
-from world.utils import header_two_slot, anyone_notice
+from world.utils import header_two_slot, anyone_notice, get_specialroom, get_defaulthome
 from world.monutils import get_display_mon_banner, moves_table
 
 _IV_TOKEN_BUDGET = settings.CHARACTER_IV_TOKEN_BUDGET
@@ -281,7 +281,6 @@ class Character(ObjectParent, DefaultCharacter):
         # TODO: Implement comms idle system
         return self.is_idle
     
-
     def color_name(self, name, looker=None):
         """
         Color this character name based on what their account's permissions are,
@@ -314,6 +313,79 @@ class Character(ObjectParent, DefaultCharacter):
             color = "|G"
 
         return f"{color}{name}{"|n" if color else ""}"
+    
+
+    def at_pre_puppet(self, account, session=None, **kwargs):
+        """
+        Reactivate the character. We aren't storing characters in none when they're offline anymore
+        so this doesn't actually need to do anything here.
+
+        Args:
+            account (DefaultAccount): This is the connecting account.
+            session (Session): Session controlling the connection.
+
+        """
+        return
+
+    def at_post_puppet(self, **kwargs):
+        """
+        Called just after puppeting has been completed and all Account<->Object links have been
+        established.
+
+        Args:
+            **kwargs (dict): Arbitrary, optional arguments for users overriding the call (unused by
+            default).
+        Notes:
+
+            You can use `self.account` and `self.sessions.get()` to get account and sessions at this
+            point; the last entry in the list from `self.sessions.get()` is the latest Session
+            puppeting this Object.
+
+        """
+        if not self.location:
+            if self.db.prelogout_location:
+                newloc = self.db.prelogout_location
+            elif self.home:
+                newloc = self.home
+            else:
+                newloc = get_defaulthome()
+                
+            self.location = newloc
+            self.location.at_object_receive(self, None)
+
+
+        self.msg((self.at_look(self.location), {"type": "look"}), options=None)
+
+        self.location.msg_contents(
+            "|Y<Connection>|n {sender} has connected.",
+            exclude=[self], from_obj=self, mapping={'sender':self}
+        )
+
+    def at_post_unpuppet(self, account=None, session=None, **kwargs):
+        """
+        We're not storing characters in None anymore. We need to store the time that they're last
+        active though.
+
+        Args:
+            account (DefaultAccount): The account object that just disconnected
+                from this object.
+            session (Session): Session controlling the connection that
+                just disconnected.
+        Keyword Args:
+            reason (str): If given, adds a reason for the unpuppet. This
+                is set when the user is auto-unpuppeted due to being link-dead.
+            **kwargs: Arbitrary, optional arguments for users
+                overriding the call (unused by default).
+
+        """
+        if not self.sessions.count():
+            self.location.msg_contents(
+                "|Y<Connection>|n {sender} has left the game." + kwargs.get("reason", ""),
+                exclude=[self], from_obj=self, mapping={'sender':self}
+            )
+            self.db.prelogout_location = self.location # Just in case
+            self.last_puppeted = time.time()
+
 
 
 class PlayerCharacter(Character):

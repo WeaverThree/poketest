@@ -1,5 +1,8 @@
 import re
-from evennia.utils import display_len
+
+from django.conf import settings
+import evennia
+from evennia.utils import display_len, logger
 
 
 
@@ -65,3 +68,32 @@ def header_two_slot(width, slot1, slot2=None, headercolor="|R", color1="|w", col
 
 
     return "".join((header_left, "-" * fill, header_right))
+
+def get_specialroom(tag):
+    """Gets the room as set by @setspecialroom."""
+
+    objs = evennia.search_tag(tag, category="SpecialRoom")
+    if len(objs) > 1:
+        logger.warn(f"Too many {tag} rooms, using {objs[0]}.")
+    room = objs[0] if objs else None
+    if room and not room.is_typeclass("typeclasses.rooms.Room"):
+        logger.error(f"Special Room {room} is not a room!")
+        return None # So we don't call Room things on another object type elsewhere
+    else:
+        return room
+
+def get_defaulthome():
+    """Get the default home room. Searches for tagged home first then falls back to DBREF setting."""
+    
+    home = get_specialroom(settings.TAG_DEFAULT_HOME)
+    if not home:
+        logger.warn(f"No default home has been tagged. Use '@setspecialroom {settings.TAG_DEFAULT_HOME}' somewhere.")
+        objs = evennia.search_object(settings.DEAFULT_HOME)
+        if not objs:
+            logger.error("NO FALLBACK DEFAULT HOME! This will probably cause errors.")
+            return None
+        home = objs[0]
+    return home
+
+
+    

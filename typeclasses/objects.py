@@ -185,7 +185,12 @@ class ObjectParent:
                 continue
             if not char.access(looker, "search", default=True):
                 continue
-            char_names.append(char.get_display_name(looker))
+            if char.has_account:
+                char_names.append(char.get_display_name(looker))
+            else:
+                # Doing this here because it should only display in the character listing,
+                # not as any other property of the character.
+                char_names.append(char.get_display_name(looker) + " [Offline]")
             
         things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
         

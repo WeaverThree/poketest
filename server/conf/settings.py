@@ -32,6 +32,22 @@ RP_TRAP_MOVE_DELAY = 15 # Seconids
 RP_TRAP_IDLE_TIME = 60 * 5 
 GENERAL_IDLE_TIME = 60 * 10 # How long until names go dim from idle
 
+# Valid room types for @setspecialroom
+
+VALID_ROOM_TAGS = [
+    "defaulthome",
+    "jail",
+    "ooctarget",
+    "sleeperhome",
+    "spawn",
+]
+
+# System will use these tagged rooms if they exist over START_LOCATION and DEFAULT_HOME, which can
+# be left set to #2 as a final fallback
+
+TAG_START_LOCATION = "spawn"
+TAG_DEFAULT_HOME = "defaulthome"
+
 
 
 ######################################################################
@@ -65,6 +81,8 @@ REGISTRATION_PASSTOKEN = None # Please put me in secret_settings.py - string wit
 TIME_ZONE = "America/Los_Angeles"
 TIME_FACTOR = 1.0
 MAX_CHAR_LIMIT = 20000
+IDLE_TIMEOUT = 60 * 60 # 1 hour
+
 
 # Different Multisession modes allow a player (=account) to connect to the
 # game simultaneously with multiple clients (=sessions).
@@ -73,7 +91,7 @@ MAX_CHAR_LIMIT = 20000
 #  2 - multiple sessions per account, one session allowed per puppet
 #  3 - multiple sessions per account, multiple sessions per puppet (share output)
 #      session getting the same data.
-MULTISESSION_MODE = 2
+MULTISESSION_MODE = 0
 
 
 CMD_IGNORE_PREFIXES = ""

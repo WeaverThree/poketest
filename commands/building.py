@@ -1,19 +1,15 @@
 
 from collections import defaultdict
 
+from django.conf import settings
 import evennia
 
 from .command import MuxCommand, Command
 
 from typeclasses.rooms import Room
 
-_VALID_ROOM_TAGS = [
-    "defaulthome",
-    "jail",
-    "ooctarget",
-    "sleeperhome",
-    "spawn",
-]
+
+_VALID_ROOM_TAGS = settings.VALID_ROOM_TAGS 
 
 class CmdZone(Command):
     """
