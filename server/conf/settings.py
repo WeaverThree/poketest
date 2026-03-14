@@ -62,7 +62,7 @@ REGISTRATION_PASSTOKEN = None # Please put me in secret_settings.py - string wit
 ######################################################################
 
 # This is the name of your game. Make it catchy!
-SERVERNAME = "Pokémorph Below"
+SERVERNAME = "Pokémorph Below 2.0α"
 BASE_CHARACTER_TYPECLASS = "typeclasses.characters.PlayerCharacter"
 COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"
 
