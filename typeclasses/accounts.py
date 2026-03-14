@@ -69,7 +69,7 @@ class Account(DefaultAccount):
     game.
     """
     
-    bitching_betty_messages = AttributeProperty([])
+    bitching_betty_messages = AttributeProperty([], category="bitching_betty")
 
     @classmethod
     def create(cls, *args, **kwargs):
