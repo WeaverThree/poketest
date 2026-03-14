@@ -51,6 +51,13 @@ class ObjectParent:
 
     DESC_LENGTH_REQ = 0
 
+
+    @property
+    def is_ic_room(self):
+        """Not an IC room if it's not a Room..."""
+        return False
+    
+
     def register_post_command_message(self, message):
         """Register a message for display after the current command. Forwards to the object's account."""
         if self.has_account:
@@ -366,7 +373,7 @@ class ObjectParent:
             wordcount = get_wordcount(message)
             self.location.last_ic_talk_time_loc = time.time()
             self.location.ic_wordcount_loc += wordcount
-            if self.is_typeclass(PlayerCharacter):
+            if self.is_typeclass(PlayerCharacter) and self.location.is_ic_room:
                 self.last_ic_talk_time = time.time()
                 self.ic_wordcount += wordcount  
 

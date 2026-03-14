@@ -44,7 +44,7 @@ class CmdOOC(Command):
         else:
             out.append(f' says, "{args}"')
 
-        self.caller.location.msg_contents(''.join(out), mapping={'sender': self.caller})
+        self.caller.location.msg_contents(''.join(out), mapping={'sender': self.caller}, from_obj=self.caller)
 
 
 class CmdSpoof(Command):
@@ -82,11 +82,12 @@ class CmdSpoof(Command):
 
             out.append(paragraph)
 
-        self.caller.location.msg_contents('\n'.join(out), mapping={'sender': self.caller})
+        self.caller.location.msg_contents('\n'.join(out), mapping={'sender': self.caller}, from_obj=self.caller)
 
         wordcount = get_wordcount(args)
 
         self.caller.location.last_ic_talk_time_loc = time.time()
-        self.caller.last_ic_talk_time = time.time()
         self.caller.location.ic_wordcount_loc += wordcount
-        self.caller.ic_wordcount += wordcount
+        if self.caller.location.is_ic_room:
+            self.caller.last_ic_talk_time = time.time()
+            self.caller.ic_wordcount += wordcount

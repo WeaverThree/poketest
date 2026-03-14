@@ -51,8 +51,8 @@ class CmdDice(MuxCommand):
         result = result.replace(')', ')|n')
         
         if private:
-            self.caller.msg(f"|M<Dice-Private>|n {result}")
+            self.caller.msg(f"|Y<Dice-Private>|n {result}")
         else:
             self.caller.location.msg_contents(
-                "|M<Dice>|n {sender} rolled " + result + '.', mapping={'sender': self.caller}
+                "|Y<Dice>|n {sender} rolled " + result + '.', mapping={'sender': self.caller}, from_obj=self.caller,
             )

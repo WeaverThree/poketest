@@ -398,7 +398,7 @@ class PlayerCharacter(Character):
     This Character is for accounts to connect to. It adds functionality that only matters for
     characters that are controlled by people. 
 
-    Player_mode should be one of AUP (not accepted rules yet), OOC, IC, CG (chargen), or DOWN
+    Player_mode should be one of AUP (not accepted rules yet), OOC, IC, CG (chargen), DOWN, or JAIL
     """
 
     accepted_rules = AttributeProperty(False)
@@ -519,6 +519,13 @@ class PlayerCharacter(Character):
         """How long since this character said something in character."""
         return time.time() - self.last_ic_talk_time
 
+
+    @property
+    def is_ic(self):
+        """Are we in (an) IC mode?"""
+        return self.player_mode in ("IC", "DOWN") # all other modes are OOC modes
+    
+
     def at_object_creation(self):
         """
         Setup default channels and messaging permissions that now live on characters instead of
@@ -557,8 +564,8 @@ class PlayerCharacter(Character):
         
         if move_type == "traverse":
             now = time.time()
-            if self.ndb.movelock and self.ndb.movelock > now:
-                self.msg("Can't move for another {:.0f} seconds".format(self.ndb.movelock - now))
+            if self.move_lock_end_time > now:
+                self.msg("Can't move for another {:.0f} seconds".format(self.move_lock_end_time - now))
                 return False
             else:
                 return super().at_pre_move(dest, move_type, **kwargs)
@@ -571,9 +578,9 @@ class PlayerCharacter(Character):
                 for char in PlayerCharacter.objects.filter(Q(db_location=self.location) & ~ Q(db_key=self)) 
                 if char.idle_time and char.idle_time < _RP_TRAP_IDLE_TIME]
         if active_players_in_room:
-            self.ndb.movelock = time.time() + _RP_TRAP_MOVE_DELAY
+            self.move_lock_end_time = time.time() + _RP_TRAP_MOVE_DELAY
             self.register_post_command_message(
-                "|MPlayer activity detected|n, locking movement for {} seconds.".format(_RP_TRAP_MOVE_DELAY)
+                f"|MPlayer activity detected|n, locking movement for {_RP_TRAP_MOVE_DELAY} seconds."
             )
         else:
             self.ndb.movelock = None;

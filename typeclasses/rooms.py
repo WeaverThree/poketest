@@ -23,6 +23,11 @@ class Room(ObjectParent, DefaultRoom):
 
     DESC_LENGTH_REQ = 500
 
+    @property
+    def is_ic_room(self):
+        return not 'ooc' in self.tags.get(category="Zone", return_list=True)
+    
+
     def at_pre_object_receive(self, arriving_object, source_location, **kwargs):
 
         if arriving_object.is_typeclass(PlayerCharacter):
@@ -30,7 +35,7 @@ class Room(ObjectParent, DefaultRoom):
                 zone = self.tags.get(category="Zone", return_list=True)
                 if zone and zone[0] != 'ooc':
                     arriving_object.msg(
-                        "You're not approved for IC access yet. "
+                        "|mYou're not approved for IC access yet. |n"
                         "Please complete chargen and then ask staff for assistance."
                     )
                     return False
@@ -44,7 +49,11 @@ class Room(ObjectParent, DefaultRoom):
             if moved_obj.player_mode not in ("DOWN", "JAIL"):
                 zone = self.tags.get(category="Zone", return_list=True)
                 if zone and zone[0] != 'ooc' and not moved_obj.account.permissions.check('Builder'):
-                    moved_obj.player_mode = "IC"
+                    if moved_obj.player_mode != "IC":
+                        moved_obj.msg("|mMoving to IC grid, enetring IC mode.|n")
+                        moved_obj.player_mode = "IC"
                 else:
-                    moved_obj.player_mode = "OOC"
+                    if moved_obj.player_mode != "OOC":
+                        moved_obj.msg("|mLeaving IC grid, enetring OOC mode.|n")
+                        moved_obj.player_mode = "OOC"
             

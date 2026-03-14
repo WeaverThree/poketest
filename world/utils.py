@@ -28,13 +28,13 @@ def split_on_all_newlines(text):
     """Splits the incoming text on |/ and newline characters. More will be added if nessecary."""
     return _MULTI_NEWLINE_RE.split(text)
 
+
 def get_wordcount(text):
     total = 0
-    print(text)
     for para in split_on_all_newlines(text):
-        print(para)
         total += len(para.strip().split())
     return total
+
 
 def anyone_notice(target, message):
     """Error message for anyone to see. Registers for display after command."""
@@ -69,6 +69,7 @@ def header_two_slot(width, slot1, slot2=None, headercolor="|R", color1="|w", col
 
     return "".join((header_left, "-" * fill, header_right))
 
+
 def get_specialroom(tag):
     """Gets the room as set by @setspecialroom."""
 
@@ -96,4 +97,6 @@ def get_defaulthome():
     return home
 
 
-    
+def is_unpuppted_pc(obj):
+    """To filter out player characters that are logged out against most modifying commands with a custom message."""
+    return obj and obj.is_typeclass("typeclasses.characters.PlayerCharacter") and not obj.has_account
