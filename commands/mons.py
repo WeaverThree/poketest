@@ -127,6 +127,8 @@ class CmdRandMons(Command):
         
         count = min(count,50)
 
+        count = min(count, len(mondata.mons))
+
         mons = random.sample(mondata.mons, count)
 
         for idx, mon in enumerate(mons):
@@ -201,6 +203,8 @@ class CmdRandMoves(Command):
             count = 5
         
         count = min(count,50)
+
+        count = min(count, len(mondata.movenames))
 
         movenames = random.sample(sorted(mondata.movenames), count)
         moves = [mondata.moves[movename] for movename in movenames]
