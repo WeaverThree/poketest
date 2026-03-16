@@ -26,6 +26,7 @@ from .objects import ObjectParent
 from world.utils import header_two_slot, anyone_notice, get_specialroom, get_defaulthome
 from world.monutils import get_display_mon_banner, moves_table
 
+_WIDTH = settings.OUR_WIDTH
 _IV_TOKEN_BUDGET = settings.CHARACTER_IV_TOKEN_BUDGET
 _RP_TRAP_MOVE_DELAY = settings.RP_TRAP_MOVE_DELAY
 _RP_TRAP_IDLE_TIME = settings.RP_TRAP_IDLE_TIME
@@ -102,7 +103,7 @@ class Character(ObjectParent, DefaultCharacter):
 
     def return_appearance(self, looker=None, **kwargs):
         
-        header = header_two_slot(80,
+        header = header_two_slot(_WIDTH,
             f"{self.get_display_name(looker, **kwargs)}{self.get_extra_display_name_info(looker, **kwargs)}",
             f"{get_display_mon_banner(self)}",
             headercolor="|b"
@@ -143,7 +144,7 @@ class Character(ObjectParent, DefaultCharacter):
         out = [stat1, stat2, stat3]
 
         if self.moves_equipped:
-            out.append(f"|w{'- - - Moves Equipped - - -':^80}|n")
+            out.append(f"|w{'- - - Moves Equipped - - -':^{_WIDTH}}|n")
             out.append(str(moves_table(self.moves_equipped)))
 
         
@@ -152,8 +153,8 @@ class Character(ObjectParent, DefaultCharacter):
             moves_known_filtered.remove(move)
         
         if moves_known_filtered:
-            out.append(f"|w{'- - - Moves Known - - -':^80}|n")
-            out.append(str(moves_table(moves_known_filtered)))
+            out.append(f"|w{'- - - Moves Known - - -':^{_WIDTH}}|n")
+            out.append(str(moves_table(moves_known_filtered, useheader=(not self.moves_equipped))))
     
         return '\n'.join(out)
 

@@ -10,6 +10,8 @@ from typeclasses.accounts import Account
 
 from .command import Command, MuxCommand
 
+_WIDTH = settings.OUR_WIDTH
+
 class CmdWho(MuxCommand):
     """
     list who is currently online
@@ -193,7 +195,7 @@ class CmdStaff(Command):
             border_width=0,                              
         )
         title = f' - - - {settings.SERVERNAME} Staff List - - - '
-        self.caller.msg(f"\n|w{title:^80}|n\n{table}")
+        self.caller.msg(f"\n|w{title:^{_WIDTH}}|n\n{table}")
 
 
 class CmdStatus(Command):

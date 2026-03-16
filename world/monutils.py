@@ -134,7 +134,7 @@ def get_display_mon_banner(mon):
         return f"{get_display_mon_type(mon)} #{mon['dexno']} {get_display_mon_name(mon)}"
 
 
-def moves_table(movelist, usedlist=None):
+def moves_table(movelist, usedlist=None, useheader=True):
     """
     Returns a table of nicely formated moves. If usedlist is provided, it will show remaining moves.
 
@@ -204,17 +204,19 @@ def moves_table(movelist, usedlist=None):
     
     sortlist = sorted(zip(names,movetypes,categories,priorities,useslist,potentcies,accuracies)) 
     
+    header = ("|wMove|n","|w Type|n","|w Cat|n","|wPrio|n","|wUses|n","|wPow|n","|wAcc|n",) if useheader else ()
+
     table = evtable.EvTable(
-        "|wMove|n","|w Type|n","|w Cat|n","|wPrio|n","|wUses|n","|wPow|n","|wAcc|n",
+        *header,
         table=[list(col) for col in zip(*sortlist)],
         border_width=0,
     )
     table.reformat_column(0, width=20)
-    table.reformat_column(1, align="a")
-    table.reformat_column(2, align="a")
-    table.reformat_column(3, align="r")
-    table.reformat_column(4, align="r")
-    table.reformat_column(5, align="r")
-    table.reformat_column(6, align="r")
+    table.reformat_column(1, align="a", width=8)
+    table.reformat_column(2, align="a", width=8)
+    table.reformat_column(3, align="r", width=6)
+    table.reformat_column(4, align="r", width=7)
+    table.reformat_column(5, align="r", width=5)
+    table.reformat_column(6, align="r", width=5)
 
     return table

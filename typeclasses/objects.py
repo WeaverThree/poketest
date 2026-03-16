@@ -14,6 +14,7 @@ import typing
 from collections import defaultdict
 
 import inflect 
+from django.conf import settings
 from django.utils.translation import gettext as _
 
 from evennia import AttributeProperty
@@ -22,6 +23,7 @@ from evennia.utils import evtable, ansi, group_objects_by_key_and_desc, make_ite
 
 from world.utils import builder_notice, replace_mush_escapes, header_two_slot, get_wordcount, split_on_all_newlines
 
+_WIDTH = settings.OUR_WIDTH
 _INFLECT = inflect.engine()
 _EXIT_NAME_ORDER = ["[N]", "[NE", "[E]", "[SE", "[S]", "[SW", "[W]", "[NW", "[U]", "[D]", "[I]", "[O]"]
 def _exit_name_sort_key(exitname):
@@ -200,7 +202,7 @@ class ObjectParent:
         # For reasons entirely unclear to me, roomname, extra_name_info, and desc need to be
         # subscripted here...
 
-        header = header_two_slot(80, roomname[0] + extra_name_info[0], zone)
+        header = header_two_slot(_WIDTH, roomname[0] + extra_name_info[0], zone)
 
         lasttime = time_format(time.time() - self.last_ic_talk_time_loc, 0) if self.last_ic_talk_time_loc else "Never"
         tmp_last_talk_time = f"(TMP) Last Talk: {lasttime} Wordcount here: {self.ic_wordcount_loc}"
