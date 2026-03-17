@@ -204,7 +204,7 @@ def moves_table(movelist, usedlist=None, useheader=True):
     
     sortlist = sorted(zip(names,movetypes,categories,priorities,useslist,potentcies,accuracies)) 
     
-    header = ("|wMove|n","|w Type|n","|w Cat|n","|wPrio|n","|wUses|n","|wPow|n","|wAcc|n",) if useheader else ()
+    header = ("|wMove|n","|w Type|n","|w Cat|n","|wPrio|n","|wPP'|n","|wPow|n","|wAcc|n",) if useheader else ()
 
     table = evtable.EvTable(
         *header,

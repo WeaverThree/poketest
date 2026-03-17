@@ -483,7 +483,7 @@ class PlayerCharacter(Character):
     move_lock_end_time = AttributeProperty(0, category="talkmonitor")
     ic_wordcount = AttributeProperty(0, category="talkmonitor")
 
-    DESC_LENGTH_REQ = 500
+    DESC_LENGTH_REQ = 255
     
     def logaudit(self, msg):
         self.auditlog.append((time.time(),msg))

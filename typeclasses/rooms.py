@@ -37,7 +37,7 @@ class Room(ObjectParent, DefaultRoom):
     properties and methods available on all Objects.
     """
 
-    DESC_LENGTH_REQ = 500
+    DESC_LENGTH_REQ = 255
 
     @property
     def is_ic_room(self):

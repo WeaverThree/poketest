@@ -74,7 +74,12 @@ I'm just making this public to make things easier.
 - special teleport command for teleport users
     - other movement abilities?
 
+- daily refresh
+- 24-hour sleepers
 
+
+- Figure out what we're going to do about UTF characters
+- Test other mu clients
 
 
 - Better exceptions for reading csv files in mondata?
