@@ -17,9 +17,6 @@ I'm just making this public to make things easier.
         - Faction (Guild, Rogue, Merc, Unaffiliated)
         - Rank
         - Subfaction
-    - Shortdesc
-    - Orientation
-    - Player
 - +ic +ooc
 - skill swapper object
 
@@ -58,6 +55,10 @@ I'm just making this public to make things easier.
 - helper / plotrunner
     - can make NPCs and puppets and stuff
     - can't build, modify descs
+    - createnpc command
+    - checknpc command
+    - access to admin chargen but only allow targeting npcs
+    
     
     - jail command
 

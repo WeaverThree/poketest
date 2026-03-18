@@ -120,13 +120,13 @@ class CmdStats(Command):
     (Or see the stats of another, if you're ADMIN+. Compare will always compare.)
 
     Usage:
-      stats
-      stats <creature>
-      compare <creature>
+      +stats
+      +stats <creature>
+      +compare <creature>
     """
 
-    key = "stats"
-    aliases = ["sheet", "compare"]
+    key = "+stats"
+    aliases = ["+sheet", "+compare"]
     locks = "cmd:all()"
 
     def func(self):
@@ -148,4 +148,4 @@ class CmdStats(Command):
 
         sheet = target.get_statblock(caller, always_compare=always_compare)
 
-        self.msg(text=(sheet, {"type": "look"}), options=None)
+        self.msg(text=(sheet, {"type": "stats"}), options=None)

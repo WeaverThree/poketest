@@ -23,6 +23,7 @@ from . import help_overrides
 from . import system_overrides
 from . import unloggedin_overrides
 from . import mons
+from . import chargen
 from . import chargen_admin
 from . import userlisting
 from . import general
@@ -59,6 +60,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.remove("batchcommands")
         self.remove("batchcode")
         self.remove("unlink")
+        
         self.add(admin_overrides.CmdBan())
         self.add(admin_overrides.CmdBoot())
         self.add(admin_overrides.CmdEmit())
@@ -92,10 +94,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(help_overrides.CmdSetHelp())
         self.add(system_overrides.CmdAbout())
         self.add(system_overrides.CmdTime())
-        self.add(mons.CmdMonTypes()) 
-        self.add(mons.CmdRandMons())
-        self.add(mons.CmdMoveLookup())
-        self.add(mons.CmdRandMoves())
+
+        self.add(building.CmdZone())
+        self.add(building.CmdSetSpecialRoom())
+        self.add(chargen.CmdChargenSetInfo())
+        self.add(chargen.CmdChargenSetSex())
         self.add(chargen_admin.CmdAdminSetSpecies())
         self.add(chargen_admin.CmdAdminSetNature())
         self.add(chargen_admin.CmdAdminBuyIVs())
@@ -105,16 +108,17 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(chargen_admin.CmdAdminUnequipMove())
         self.add(chargen_admin.CmdAdminLearnMove())
         self.add(chargen_admin.CmdAdminForgetMove())
-        self.add(userlisting.CmdWho())
-        self.add(userlisting.CmdStaff())
-        self.add(userlisting.CmdStatus())
-        self.add(userlisting.CmdStaffInfo())
-        self.add(building.CmdZone())
-        self.add(building.CmdSetSpecialRoom())
         self.add(dice.CmdDice())
         self.add(general.CmdOOC())
         self.add(general.CmdSpoof())
         self.add(general.CmdStats())
+        self.add(mons.CmdMonTypes()) 
+        self.add(mons.CmdRandMons())
+        self.add(mons.CmdMoveLookup())
+        self.add(mons.CmdRandMoves())
+        self.add(userlisting.CmdWho())
+        self.add(userlisting.CmdStatus())
+        self.add(userlisting.CmdStaffInfo())
 
 
 

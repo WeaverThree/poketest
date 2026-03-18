@@ -127,6 +127,16 @@ class Character(ObjectParent, DefaultCharacter):
     moves_equipped = AttributeProperty({})
 
 
+    # Profile Properties
+
+    sex = AttributeProperty("")
+
+    short_desc = AttributeProperty("")
+    full_name = AttributeProperty("")
+    player_name = AttributeProperty("")
+    player_contact = AttributeProperty("")
+    
+
     last_puppeted = AttributeProperty(0)
 
 
