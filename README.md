@@ -35,7 +35,6 @@ I'm just making this public to make things easier.
 
     2 votes a day every day for a week = two tokens - 1 token = 1000 points
 
-- 255 character desc size
 
 - follow command
 - find command
@@ -78,6 +77,7 @@ I'm just making this public to make things easier.
 - daily refresh
 - 24-hour sleepers
 
+- looked at notification
 
 - Figure out what we're going to do about UTF characters
 - Test other mu clients

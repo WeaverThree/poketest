@@ -5,6 +5,7 @@ Rooms are simple containers that has no location of their own.
 
 """
 
+from django.conf import settings
 import evennia
 from evennia.objects.objects import DefaultRoom
 
@@ -37,7 +38,7 @@ class Room(ObjectParent, DefaultRoom):
     properties and methods available on all Objects.
     """
 
-    DESC_LENGTH_REQ = 255
+    DESC_LENGTH_REQ = settings.DESIRED_MIN_DESC
 
     @property
     def is_ic_room(self):

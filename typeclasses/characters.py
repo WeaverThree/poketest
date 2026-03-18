@@ -108,23 +108,24 @@ class Character(ObjectParent, DefaultCharacter):
     dexno = AttributeProperty(0)
     type1 = AttributeProperty("")
     type2 = AttributeProperty("")
-    ability = AttributeProperty("")
     base_stats = AttributeProperty({})
-    nature = AttributeProperty("")
+
+    ability = AttributeProperty("")
     
+    nature = AttributeProperty("")
     favored_stat = AttributeProperty("")
     neglected_stat = AttributeProperty("")
+
+    level = AttributeProperty(50)
     stats = AttributeProperty({})
     ivs = AttributeProperty({})
     evs = AttributeProperty({})
-    
-    level = AttributeProperty(50)
     
     ivtokens = AttributeProperty(0)
     ivtokens_spent = AttributeProperty(0)
     evtokens = AttributeProperty(0)
     evtokens_spent = AttributeProperty(0)
-
+    
     moves_known = AttributeProperty(set())
     moves_equipped = AttributeProperty({})
 
@@ -138,6 +139,9 @@ class Character(ObjectParent, DefaultCharacter):
     player_name = AttributeProperty("")
     player_contact = AttributeProperty("")
     
+    faction = AttributeProperty("")
+    subfaction = AttributeProperty("")
+    rank = AttributeProperty("")
 
     last_puppeted = AttributeProperty(0)
 
@@ -495,7 +499,7 @@ class PlayerCharacter(Character):
     move_lock_end_time = AttributeProperty(0, category="talkmonitor")
     ic_wordcount = AttributeProperty(0, category="talkmonitor")
 
-    DESC_LENGTH_REQ = 255
+    DESC_LENGTH_REQ = settings.DESIRED_MIN_DESC
     
     def logaudit(self, msg):
         self.auditlog.append((time.time(),msg))

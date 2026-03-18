@@ -32,12 +32,15 @@ from evennia.settings_default import *
 # Currently only applies to newly species-set characters
 CHARACTER_IV_TOKEN_BUDGET = math.ceil((6 * 16) / 3)
 
+STARTING_MOVES = 3
+
 RP_TRAP_MOVE_DELAY = 15 # Seconds
 RP_TRAP_IDLE_TIME = 60 * 5 
 GENERAL_IDLE_TIME = 60 * 10 # How long until names go dim from idle
 TALKERS_LIST_HOLD_TIME = 60 * 60 * 6 # 6 hours
 
 OUR_WIDTH = 74 # This controls monmu customized stuff, not evennia default
+DESIRED_MIN_DESC = 255 # Bitch when descriptions are shorter
 
 # Valid room types for @setspecialroom
 
