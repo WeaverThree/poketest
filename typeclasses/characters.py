@@ -91,8 +91,27 @@ def _comparestatline (statname, us, them):
             color = c
             break
 
-    return f"|#{_statcolor[statname]}{_display_statname[statname]:>7}:{color}{desc:>22}|n"
-    
+    return f"|#{_statcolor[statname]}{_display_statname[statname]:>7}:{color}{desc:>23}|n"
+
+def _comparecrossstats (stat1, stat2, us, them):
+    # We're going to assume that both sides have stats here
+    ourstat = us.stats[stat1]
+    theirstat = them.stats[stat2]
+    diff = theirstat - ourstat # this + us = them
+
+    desc = ""
+    color = ""
+    for low, high, d, c in _comparetable:
+        if low <= diff < high:
+            desc = d
+            color = c
+            break
+
+    return (
+        f"|#{_statcolor[stat1]}{_display_statname[stat1]}"
+        f"|w vs |#{_statcolor[stat2]}{_display_statname[stat2]}"
+        f": {color}{desc}|n"
+    )
 
 
 class Character(ObjectParent, DefaultCharacter):
@@ -163,7 +182,7 @@ class Character(ObjectParent, DefaultCharacter):
                 anyone_notice(looker, "Your description should be longer.")
 
 
-        return f"\n{header}\n{desc}"
+        return f"{header}\n{desc}\n"
     
 
     def get_statblock(self, looker, always_compare=False, **kwargs):
@@ -206,7 +225,7 @@ class Character(ObjectParent, DefaultCharacter):
 
             stat4 = f"|b{'IV Tokens:':>15}{ivcolor} {ivtokens_left:2n}" if ivtokens_left else ""
 
-            out = ['', header, stat1, stat2, stat3]
+            out = [header, stat1, stat2, stat3]
 
             if stat4:
                 out.append(stat4)
@@ -222,9 +241,14 @@ class Character(ObjectParent, DefaultCharacter):
             if moves_known_filtered:
                 out.append(f"|w{'- - - Moves Known - - -':^{_WIDTH}}|n")
                 out.append(str(moves_table(moves_known_filtered, useheader=(not self.moves_equipped))))
+            
+            out.append('')
         
         else:
-            stat0 = f" Compared to {looker.get_display_name(looker)}, {self.get_display_name(looker)} is:"
+            stat0 = (
+                f" Compared to |bLv{looker.level}|n {looker.get_display_name(looker)}, "
+                f"|bLv{self.level}|n {self.get_display_name(looker)} is:"
+            )
             stat1 = (
                 f" {_comparestatline("health", looker, self)}  "
                 f" {_comparestatline("speed", looker, self)}"
@@ -237,10 +261,10 @@ class Character(ObjectParent, DefaultCharacter):
                 f" {_comparestatline("special attack", looker, self)}  "
                 f" {_comparestatline("special defense", looker, self)}"
             )
+            # stat4 = f" {_comparecrossstats('physical attack', 'physical defense', looker, self)}"
+            # stat5 = f" {_comparecrossstats('special attack', 'special defense', looker, self)}"
 
-            stat4 = f" |bTheir level:|n {self.level}"
-
-            out = ['', header, stat0, stat1, stat2, stat3, stat4]
+            out = [header, stat0, stat1, stat2, stat3, '']
 
         return '\n'.join(out)
 
@@ -787,3 +811,41 @@ class PlayerCharacter(Character):
 
         """
         pass
+
+    def at_look(self, target, **kwargs):
+        """
+        Called when this object performs a look. It allows to
+        customize just what this means. It will not itself
+        send any data. -- Actually it will, we need to send the person looked at you here.
+
+        Args:
+            target (DefaultObject): The target being looked at. This is
+                commonly an object or the current location. It will
+                be checked for the "view" type access.
+            **kwargs: Arbitrary, optional arguments for users
+                overriding the call. This will be passed into
+                return_appearance, get_display_name and at_desc but is not used
+                by default.
+
+        Returns:
+            str: A ready-processed look string potentially ready to return to the looker.
+
+        """
+        if not target.access(self, "view"):
+            try:
+                return _("Could not view '{target_name}'.").format(
+                    target_name=target.get_display_name(self, **kwargs)
+                )
+            except AttributeError:
+                return _("Could not view '{target_name}'.").format(target_name=target.key)
+
+        description = target.return_appearance(self, **kwargs)
+        
+        if target.is_typeclass(PlayerCharacter):
+            target.msg(f"{self.get_display_name(target)} just looked at {target.get_display_name(target)}.")
+
+        # the target's at_desc() method.
+        # this must be the last reference to target so it may delete itself when acted on.
+        target.at_desc(looker=self, **kwargs)
+
+        return description

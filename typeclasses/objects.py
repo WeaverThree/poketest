@@ -26,7 +26,7 @@ from world.utils import builder_notice, replace_mush_escapes, header_two_slot, g
 _TALKERS_LIST_HOLD_TIME = settings.TALKERS_LIST_HOLD_TIME
 _WIDTH = settings.OUR_WIDTH
 _INFLECT = inflect.engine()
-_EXIT_NAME_ORDER = ["[N]", "[NE", "[E]", "[SE", "[S]", "[SW", "[W]", "[NW", "[U]", "[D]", "[I]", "[O]"]
+_EXIT_NAME_ORDER = ["[N]", "[NE", "[E]", "[SE", "[S]", "[SW", "[W]", "[NW", "[U]", "[D]", "[I]", "[IN", "[O]"]
 def _exit_name_sort_key(exitname):
     """
     Key formatted exit name to sort cardinals clockwise and first.
@@ -243,7 +243,7 @@ class ObjectParent:
         lasttime = time_format(time.time() - self.last_ic_talk_time_loc, 0) if self.last_ic_talk_time_loc else "Never"
         tmp_last_talk_time = f"(TMP) Last Talk: {lasttime} Wordcount here: {self.ic_wordcount_loc}"
 
-        return f"\n{header}\n{tmp_last_talk_time}\n{desc[0]}\n\n{looktable}{'\n' if looktable else ''}"
+        return f"{header}\n{tmp_last_talk_time}\n{desc[0]}\n\n{looktable}{'\n' if looktable else ''}"
 
 
     def get_room_inventory(self, looker, kwargs):
