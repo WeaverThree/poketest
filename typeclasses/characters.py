@@ -148,6 +148,7 @@ class Character(ObjectParent, DefaultCharacter):
     moves_known = AttributeProperty(set())
     moves_equipped = AttributeProperty({})
 
+    health_lost = AttributeProperty(0)
 
     # Profile Properties
 
@@ -377,6 +378,17 @@ class Character(ObjectParent, DefaultCharacter):
         # But still don't remove something that's not there
         if movename in self.moves_known:
             self.moves_known.remove(movename)
+
+
+
+    @property
+    def is_dead(self):
+        """Is remaing hp <= 0?"""
+        if not self.stats:
+            return False
+        else:
+            return self.health_lost >= self.stats['health']
+
 
 
 
