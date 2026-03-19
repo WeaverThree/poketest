@@ -6,12 +6,23 @@ from django.conf import settings
 from .command import MuxCommand, Command
 from evennia import GLOBAL_SCRIPTS
 from evennia.comms.models import ChannelDB
-from evennia.utils import evtable, string_suggestions, logger
+from evennia.utils import evtable, string_suggestions, logger, display_len
 
 from world.utils import get_defaulthome, get_specialroom
 from world.monutils import type_vuln_table, get_display_mon_name, get_display_mon_type, get_display_mon_banner
 
 _MAX_EQUIPPED_MOVES = 6
+_STARTING_MOVES = settings.STARTING_MOVES
+_STARTING_MOVES_EQUIPPED = settings.STARTING_MOVES
+_MIN_DESC = settings.DESIRED_MIN_DESC
+_ALREADY_APPROVED_MSG = (
+    "{target} |bis already approved. Please ask staff if you want to change anything "
+    "that you can't still change by yourself. Thanks!|n"
+)
+
+def _wrapif(start, middle, end, cond):
+    return f"{start if cond else ''}{middle}{end if cond else ''}"
+
 
 class CmdAcceptPolicy(Command):
     """
@@ -67,14 +78,14 @@ class CmdAcceptPolicy(Command):
 class CmdChargenSetSpecies(Command):
     """
     Usage:
-        setspecies (subtype,||subtype,form,)<species name or dex number>
+        +setspecies (subtype,||subtype,form,)<species name or dex number>
     """
-    key = 'setspecies'
-    aliases = ['setmon']
+    key = '+setspecies'
+    aliases = ['+setmon']
     locks = "cmd:all()"
     help_category = "Chargen"
     
-    _usage = "Usage: setspecies (subtype,||subtype,form,)<species name or dex number>"
+    _usage = "Usage: +setspecies (subtype,||subtype,form,)<species name or dex number>"
 
     def func(self):
         mondata = GLOBAL_SCRIPTS.mondata
@@ -85,6 +96,10 @@ class CmdChargenSetSpecies(Command):
             # Should never happen, but
             self.msg(f"You don't have permission to work on {target.name}.")
             return
+
+        if target.approved:
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
 
         arglist = [arg.strip() for arg in self.args.split(',')]
 
@@ -144,7 +159,6 @@ class CmdChargenSetSpecies(Command):
             else:
                 self.msg("|xAborted.|n")
                 return
-            
 
         self.msg(f"Selected {get_display_mon_banner(mon)}")
 
@@ -198,13 +212,13 @@ class CmdChargenSetSpecies(Command):
 class CmdChargenSetNature(Command):
     """
     Usage: 
-        setnature [nature]
+        +setnature [nature]
     """
-    key = 'setnature'
+    key = '+setnature'
     locks = "cmd:all()"
     help_category = "Chargen"
 
-    _usage = "Usage: setnature [nature]"
+    _usage = "Usage: +setnature [nature]"
 
     def func(self):
         mondata = GLOBAL_SCRIPTS.mondata
@@ -215,6 +229,10 @@ class CmdChargenSetNature(Command):
             # Should never happen, but
             self.msg(f"You don't have permission to work on {target.name}.")
             return
+        
+        if target.approved:
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
 
         args = self.args.strip() if self.args else ""
         
@@ -263,13 +281,14 @@ class CmdChargenSetNature(Command):
 class CmdChargenBuyIVs(MuxCommand):
     """
     Usage:
-        buyivs <stat> = <tokens to spend>
+        +buyivs <stat> = <tokens to spend>
     """
-    key = 'buyivs'
+    key = '+buyivs'
+    aliases = ['+spendivs']
     locks = "cmd:all()"
     help_category = "Chargen"
 
-    _usage = "Usage: buyivs <stat> = <tokens to spend>"
+    _usage = "Usage: +buyivs <stat> = <tokens to spend>"
 
     def func(self):
         mondata = GLOBAL_SCRIPTS.mondata
@@ -280,7 +299,11 @@ class CmdChargenBuyIVs(MuxCommand):
             # Should never happen, but
             self.msg(f"You don't have permission to work on {target.name}.")
             return
-        
+
+        if target.approved:
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
+
         remaining = target.ivtokens - target.ivtokens_spent
         if not remaining:
             self.msg(f"{target.get_display_name(looker=self.caller)} has no IV tokens to spend.")
@@ -336,15 +359,19 @@ class CmdChargenBuyIVs(MuxCommand):
 class CmdChargenResetIVs(MuxCommand):
     """
     Usage:
-        resetivs
+        +resetivs
     """
-    key = 'resetivs'
+    key = '+resetivs'
     locks = "cmd:all()"
     help_category = "Chargen"
 
     def func(self):
 
         target = self.caller
+
+        if target.approved:
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
 
         if not any(target.ivs.values()):
             self.msg(f"{target.get_display_name(self.caller)} has no ivs bought, no need to reset.")
@@ -358,19 +385,24 @@ class CmdChargenResetIVs(MuxCommand):
 class CmdChargenEquipMove(MuxCommand):
     """
     Usage:
-        equipmove <move name>
+        +equipmove <move name>
     """
-    key = 'equipmove'
+    key = '+equipmove'
     locks = "cmd:all()"
     help_category = "Chargen"
 
-    _usage = "Usage: equipmove <move name>"
+    _usage = "Usage: +equipmove <move name>"
 
     def func(self):
 
         mondata = GLOBAL_SCRIPTS.mondata
 
         target = self.caller
+    
+        if target.approved:
+            # TODO: Move Machine unlocks this
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
 
         if len(target.moves_equipped) >= _MAX_EQUIPPED_MOVES:
             self.msg(
@@ -399,7 +431,7 @@ class CmdChargenEquipMove(MuxCommand):
             return
 
         if not actual_movename in target.moves_known:
-            if target.player_mode == "CG":
+            if not target.approved:
                 target.learn_move(self.caller, actual_movename)
                 self.msg(
                     f"This is chargen, so {target.get_display_name(self.caller)} is "
@@ -418,19 +450,24 @@ class CmdChargenUnequipMove(MuxCommand):
     Unequip move or show equipped moves if move name not given.
 
     Usage:
-        unequipmove [move name]
+        +unequipmove [move name]
     """
-    key = 'unequipmove'
+    key = '+unequipmove'
     locks = "cmd:all()"
     help_category = "Chargen"
 
-    _usage = "Usage: unequipmove [move name]"
+    _usage = "Usage: +unequipmove [move name]"
 
     def func(self):
 
         mondata = GLOBAL_SCRIPTS.mondata
 
         target = self.caller
+
+        if target.approved:
+            # TODO: Move Machine unlocks this
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
 
         if not target.moves_equipped:
             self.msg(f"No moves equipped by {target.get_display_name(self.caller)}.")
@@ -467,6 +504,14 @@ class CmdChargenUnequipMove(MuxCommand):
             )
             return
 
+        if not target.approved:
+            target.forget_move(self.caller, actual_movename)
+            self.msg(
+                f"This is chargen, so {target.get_display_name(self.caller)} is "
+                f"also forgetting {actual_movename}."
+            )
+
+
         target.unequip_move(self.caller, actual_movename)
         self.msg(f"{target.get_display_name(self.caller)} unequipped {actual_movename}.")
 
@@ -474,19 +519,24 @@ class CmdChargenUnequipMove(MuxCommand):
 class CmdChargenLearnMove(MuxCommand):
     """
     Usage:
-        learnmove <move name>
+        +learnmove <move name>
     """
-    key = 'learnmove'
+    key = '+learnmove'
     locks = "cmd:all()"
     help_category = "Chargen"
 
-    _usage = "Usage: learnmove <move name>"
+    _usage = "Usage: +learnmove <move name>"
 
     def func(self):
         
         mondata = GLOBAL_SCRIPTS.mondata
 
         target = self.caller
+
+        if target.approved:
+            # TODO: Move Machine unlocks this
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
 
         movename = self.args.strip()
 
@@ -515,20 +565,25 @@ class CmdChargenForgetMove(MuxCommand):
     """
     Forget move or show known moves if move name not given.
     Usage:
-        forgetmove [move name]
+        +forgetmove [move name]
     """
-    key = 'forgetmove'
+    key = '+forgetmove'
     locks = "cmd:all()"
     help_category = "Chargen"
 
-    _usage = "Usage: forgetmove [move name]"
+    _usage = "Usage: +forgetmove [move name]"
 
     def func(self):
 
         mondata = GLOBAL_SCRIPTS.mondata
 
         target = self.caller
-
+        
+        if target.approved:
+            # TODO: Move Machine unlocks this... maybe not?
+            self.msg(_ALREADY_APPROVED_MSG.format(target=target.get_display_name(self.caller)))
+            return 
+        
         if not target.moves_known:
             self.msg(f"No moves known by {target.get_display_name(self.caller)}.")
             return
@@ -676,3 +731,151 @@ class CmdChargenSetSex(MuxCommand):
 
         self.msg(f"{target.get_display_name(self.caller)} is now {target.sex}.")
         
+        
+def _checkboxline(line, cond):
+    if cond:
+        return f" |w[|gX|w]|n {line}"
+    else:
+        return f" |w[ ]|n {line}"
+    
+class CmdChargen(Command):
+    """
+    Show where you are on the checklist of character creation.
+
+    Usage:
+        +chargen
+    """
+    key = '+chargen'
+    locks = "cmd:all()"
+    help_category = "Chargen"
+
+    _usage = "Usage: +chargen"
+
+    def func(self):
+        
+        caller = self.caller
+        target = self.caller
+
+        if target.approved:
+            caller.msg(f"{target.get_display_name(caller)} |mis already approved for the IC grid. Have fun!|n")
+            return
+        
+        out = []
+
+        out.append(
+            f"|bHere's what|n {target.get_display_name(caller)} |bneeds to do to be able to be approved "
+            f"for access to the IC parts of the server:|n"
+        )
+
+        out.append(_checkboxline(
+            f"|wSpecies:|n {get_display_mon_banner(target) if target.species else 'See |bhelp +setspecies|n'}.",
+            target.species
+        ))
+
+        out.append(_checkboxline(
+            f"|wNature:|n {target.nature if target.nature else 'See |bhelp +setnature|n'}.",
+            target.nature
+        ))
+
+        iv_tokens_remain = target.ivtokens - target.ivtokens_spent
+        if target.species:
+            iv_tokens_string = f"|r{iv_tokens_remain}|n IV tokens remaining. See |bhelp +buyivs|n."
+        else:
+            iv_tokens_string = f"Set your species first."
+
+        out.append(_checkboxline(
+            f"|wIVs:|n {'All IV Tokens Spent.' if not iv_tokens_remain and target.species else iv_tokens_string}",
+            not iv_tokens_remain and target.species
+        ))
+
+        max_equipped = min(_STARTING_MOVES_EQUIPPED, _MAX_EQUIPPED_MOVES)
+
+        # is_correct_equipped = len(target.moves_equipped) == max_equipped
+        is_correct_known = len(target.moves_known) == _STARTING_MOVES
+
+        # equipped_color = "|g" if is_correct_equipped else "|r"
+        known_color = "|g" if is_correct_known else "|r"
+
+        # equipped_moves_line = f"{equipped_color}{len(target.moves_equipped)}|n/{max_equipped} moves equipped."
+        known_moves_line = f"{known_color}{len(target.moves_known)}|n/{_STARTING_MOVES} moves known."
+
+        # equipped_help = " See |bhelp +equipmove|n and |bhelp +uneqipmove|n." if not is_correct_equipped else ""
+        known_help = " See |bhelp +learnmove|n and |bhelp +forgetmove|n." if not is_correct_known else ""
+
+
+        # out.append(_checkboxline(
+        #     f"|wMoves:|n {equipped_moves_line}{equipped_help}",
+        #     is_correct_equipped
+        # ))
+
+        out.append(_checkboxline(
+            f"|wMoves:|n {known_moves_line}{known_help}",
+            is_correct_known 
+        ))
+
+        desc_len = display_len(target.get_display_desc()) if target.db.desc else 0
+        len_color = "|g" if desc_len > _MIN_DESC else "|r"
+        desc_line = [f"{len_color}{desc_len}|n character description."]
+        if desc_len < _MIN_DESC:
+            desc_line.append("|b255|n is the minimum but go big!")
+            desc_line.append("See |bhelp setdesc|n.")
+        elif desc_len > 4000:
+            desc_line.append("Wow, that's really getting long now! Good job!")
+        
+        out.append(_checkboxline(
+            f"|wDesc:|n {' '.join(desc_line)}",
+            desc_len > _MIN_DESC
+        ))
+        
+        out.append(_checkboxline(
+            f"|wSex:|n {target.sex if target.sex else 'See |bhelp +setsex|n'}.",
+            target.sex
+        ))
+
+        sdesc_len = display_len(target.short_desc)
+        if not sdesc_len:
+            sdesc_line = "See |bhelp +setinfo|n (|b+setinfo sdesc=...|n)"
+        else:
+            sdesc_line = f"|b{sdesc_len}|n character short description."
+            if sdesc_len > 120:
+                sdesc_line += " Might be getting too long."
+
+        out.append(_checkboxline(
+            f"|wShort Desc:|n {sdesc_line}",
+            target.sex
+        ))
+
+        out.append(_checkboxline(
+            f"|wFull Name:|n "
+            f"{target.full_name if target.full_name else 'See |bhelp +setinfo|n (|b+setinfo fname=...|n)'}.",
+            target.full_name
+        ))
+
+        pnm = target.player_name
+
+        out.append(_checkboxline(
+            f"|wPlayer Name:|n "
+            f"{pnm if pnm else 'See |bhelp +setinfo|n (|b+setinfo pname=...|n) (Optional)'}. ",
+            pnm
+        ))
+
+        pct = target.player_contact
+
+        out.append(_checkboxline(
+            f"|wPlayer Contact:|n "
+            f"{pct if pct else 'See |bhelp +setinfo|n (|b+setinfo pname=...|n) (Required. Only visible to Admin+)'}.",
+            pct
+        ))
+
+        if all((
+            target.species, target.nature, not iv_tokens_remain, is_correct_known, desc_len > _MIN_DESC,
+            target.sex, sdesc_len, target.full_name, target.player_contact
+        )):
+            out.append(
+                f"{target.get_display_name(caller)} |gis ready for approval. Please contact staff to continue.|n"
+            )
+        
+        self.msg('\n'.join(out))
+        
+        
+

@@ -435,7 +435,7 @@ class CmdAdminEquipMove(MuxCommand):
             return
 
         if not actual_movename in target.moves_known:
-            if target.player_mode == "CG":
+            if not target.approved:
                 target.learn_move(self.caller, actual_movename)
                 self.caller.msg(
                     f"This is chargen, so {target.get_display_name(self.caller)} is "
@@ -509,6 +509,13 @@ class CmdAdminUnequipMove(MuxCommand):
                 f"{', '.join(sorted(target.moves_equipped.keys()))}."
             )
             return
+        
+        if not target.approved:
+            target.forget_move(self.caller, actual_movename)
+            self.msg(
+                f"This is chargen, so {target.get_display_name(self.caller)} is "
+                f"also forgetting {actual_movename}."
+            )
 
         target.unequip_move(self.caller, actual_movename)
         self.caller.msg(f"{target.get_display_name(self.caller)} unequipped {actual_movename}.")

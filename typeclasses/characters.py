@@ -14,6 +14,8 @@ import math
 
 from django.db.models import Q 
 from django.conf import settings
+from django.utils.translation import gettext as _ # Not really using this but...
+
 
 from evennia import AttributeProperty
 from evennia.comms.models import ChannelDB
@@ -137,11 +139,12 @@ class Character(ObjectParent, DefaultCharacter):
 
     level = AttributeProperty(50)
     stats = AttributeProperty({})
-    ivs = AttributeProperty({})
-    evs = AttributeProperty({})
     
+    ivs = AttributeProperty({})
     ivtokens = AttributeProperty(0)
     ivtokens_spent = AttributeProperty(0)
+
+    evs = AttributeProperty({})
     evtokens = AttributeProperty(0)
     evtokens_spent = AttributeProperty(0)
     
