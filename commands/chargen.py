@@ -307,13 +307,18 @@ class CmdChargenBuyIVs(MuxCommand):
 
         remaining = target.ivtokens - target.ivtokens_spent
         if not remaining:
-            self.msg(f"{target.get_display_name(looker=self.caller)} has no IV tokens to spend.")
+            self.msg(f"{target.get_display_name(self.caller)} has no IV tokens to spend.")
+            return
         
         stat = self.lhs.lower()
         amount = self.rhs
 
         if not (stat and amount):
             self.msg(self._usage)
+            self.msg(
+                f"{target.get_display_name(self.caller)} has |r{remaining}|n IV tokens left to spend. "
+                f"Use |b+stats|n to see how they're currently allocated, or |b+resetivs|n to start over."
+            )
             return
 
         if stat not in mondata.lookup_statlist:
@@ -375,7 +380,7 @@ class CmdChargenResetIVs(MuxCommand):
             return 
 
         if not any(target.ivs.values()):
-            self.msg(f"{target.get_display_name(self.caller)} has no ivs bought, no need to reset.")
+            self.msg(f"{target.get_display_name(self.caller)} has no IVs bought, no need to reset.")
             return
 
         target.reset_ivs(self.caller)
