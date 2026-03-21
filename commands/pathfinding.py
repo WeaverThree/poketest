@@ -38,6 +38,7 @@ class CmdPathfind(Command):
             import networkx.exception
         except ImportError:
             self.msg("|mFunctionality not available. Needs python package 'networx'.|n")
+            return
 
         caller = self.caller
 
