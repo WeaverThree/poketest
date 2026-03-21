@@ -1,8 +1,6 @@
 
 import re
 
-import d20
-
 from .command import MuxCommand, Command
 
 _ONE_RE = re.compile(r'\*\*(1)\*\*')
@@ -29,6 +27,12 @@ class CmdDice(MuxCommand):
     help_category = "General"
 
     def func(self):
+
+        try:
+            import d20
+        except ImportError:
+            self.msg("|mFunctionality not available. Needs python package 'd20'")
+
         args = self.args.strip()
         
         private = True if 'priv' in self.switches or 'private' in self.switches else False
