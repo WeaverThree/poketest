@@ -33,6 +33,7 @@ _IV_TOKEN_BUDGET = settings.CHARACTER_IV_TOKEN_BUDGET
 _RP_TRAP_MOVE_DELAY = settings.RP_TRAP_MOVE_DELAY
 _RP_TRAP_IDLE_TIME = settings.RP_TRAP_IDLE_TIME
 _GENERAL_IDLE_TIME = settings.GENERAL_IDLE_TIME
+_TAG_OOC_TARGET = settings.TAG_OOC_TARGET
 
 _display_statname = {
     'health': 'Health',
@@ -162,11 +163,13 @@ class Character(ObjectParent, DefaultCharacter):
     player_name = AttributeProperty("")
     player_contact = AttributeProperty("")
     
-    faction = AttributeProperty("Unaff.")
+    faction = AttributeProperty("Unaffiliated")
     subfaction = AttributeProperty("")
     rank = AttributeProperty("Nobody")
 
     last_puppeted = AttributeProperty(0)
+    last_ic_room = AttributeProperty(None)
+
 
 
     def get_display_header(self, looker=None, **kwargs):
@@ -387,7 +390,6 @@ class Character(ObjectParent, DefaultCharacter):
         self.update_stats()
 
     
-
     def equip_move(self, caller, movename):
         """ Assumes caller is doing all the vetting """
         
@@ -416,7 +418,6 @@ class Character(ObjectParent, DefaultCharacter):
             self.moves_known.remove(movename)
 
 
-
     @property
     def is_dead(self):
         """Is remaing hp <= 0?"""
@@ -424,9 +425,7 @@ class Character(ObjectParent, DefaultCharacter):
             return False
         else:
             return self.health_lost >= self.stats['health']
-
-
-
+        
 
     @property
     def is_idle(self):
@@ -560,11 +559,14 @@ class PlayerCharacter(Character):
     Player_mode should be one of AUP (not accepted rules yet), OOC, IC, CG (chargen), DOWN, or JAIL
     """
 
+    auditlog = AttributeProperty([])
+    
     accepted_rules = AttributeProperty(False)
     approved = AttributeProperty(False)
     approvelocked = AttributeProperty(False)
+
     player_mode = AttributeProperty("OOC")
-    auditlog = AttributeProperty([])
+    
     whostatus = AttributeProperty("")
     stafftag = AttributeProperty("")
 
@@ -674,6 +676,41 @@ class PlayerCharacter(Character):
             self.msg(msg)
 
 
+    def approvelock(self, caller):
+        """Temporarially lock the player and mark approved to lock some commands."""
+        self.approved = True
+        self.approvelocked = True
+
+
+    def drop_approvelock(self, caller):
+        """Undo the approvelock without approving"""
+        self.approved = False
+        self.approvelocked = False
+
+
+    def approve(self, caller):
+        """Approve character with logging"""
+        self.approved = True
+        self.approvelocked = False
+
+        msg = f"{caller.get_display_name(self)} approved {self.get_display_name(self)}."
+        
+        self.logaudit(msg)
+        if caller != self:
+            self.msg(msg)
+
+
+    def unapprove(self, caller):
+        """Unapprove character with logging. Caller responsible for removing us from IC grid if needed."""
+        self.approved = False
+
+        msg = f"{caller.get_display_name(self)} unapproved {self.get_display_name(self)}."
+        
+        self.logaudit(msg)
+        if caller != self:
+            self.msg(msg)
+
+
     @property 
     def ic_idle_time(self):
         """How long since this character said something in character."""
@@ -721,7 +758,7 @@ class PlayerCharacter(Character):
     def at_pre_move(self, dest, move_type=None, **kwargs):
 
         if not self.accepted_rules and not self.permissions.check("Builder"):
-            self.msg("|mYou can't be moved until you accept.|n")
+            self.msg("|mYou can't be moved until you |baccept|n.")
             return False
 
         if self.approvelocked:

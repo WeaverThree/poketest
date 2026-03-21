@@ -33,6 +33,8 @@ from evennia.settings_default import *
 CHARACTER_IV_TOKEN_BUDGET = math.ceil((6 * 16) / 3)
 
 STARTING_MOVES = 3
+MAX_EQUIPPED_MOVES = 6
+
 
 RP_TRAP_MOVE_DELAY = 15 # Seconds
 RP_TRAP_IDLE_TIME = 60 * 5 

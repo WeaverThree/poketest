@@ -52,7 +52,7 @@ class Room(ObjectParent, DefaultRoom):
                 zone = self.tags.get(category="Zone", return_list=True)
                 if zone and zone[0] != 'ooc':
                     arriving_object.msg(
-                        "|mYou're not approved for IC access yet. |n"
+                        f"{arriving_object.get_display_name(arriving_object)} |mis not approved for IC access yet. |n"
                         "Please complete chargen and then ask staff for assistance."
                     )
                     return False

@@ -37,8 +37,10 @@ I'm just making this public to make things easier.
 
 
 - follow command
-- find command
+- find command - list of exits to find other character
+- teleport
 - special abilities
+
 
 - Player character death 
     - returned to home after time period with 1hp and delevling: remove 4 EV from random stat 6 times
@@ -77,15 +79,9 @@ I'm just making this public to make things easier.
 - daily refresh
 - 24-hour sleepers
 
-- looked at notification
-
 - Figure out what we're going to do about UTF characters
 - Test other mu clients
 
-
-- Better exceptions for reading csv files in mondata?
-
-- Move validation inside chargen functions in Character? Probably not but thought.
 
 - authorization keyring object
 - room claim system, lockable doors, auto updating exit names

@@ -117,6 +117,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(chargen_admin.CmdAdminUnequipMove())
         self.add(chargen_admin.CmdAdminLearnMove())
         self.add(chargen_admin.CmdAdminForgetMove())
+        self.add(chargen_admin.CmdAdminApproveCharacter())
+        self.add(chargen_admin.CmdAdminUnapproveCharacter())
         self.add(dice.CmdDice())
         self.add(general.CmdOOC())
         self.add(general.CmdSpoof())

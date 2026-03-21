@@ -11,13 +11,12 @@ from evennia.utils import evtable, string_suggestions, logger, display_len
 from world.utils import get_defaulthome, get_specialroom
 from world.monutils import type_vuln_table, get_display_mon_name, get_display_mon_type, get_display_mon_banner
 
-_MAX_EQUIPPED_MOVES = 6
+_MAX_EQUIPPED_MOVES = settings.MAX_EQUIPPED_MOVES
 _STARTING_MOVES = settings.STARTING_MOVES
-_STARTING_MOVES_EQUIPPED = settings.STARTING_MOVES
 _MIN_DESC = settings.DESIRED_MIN_DESC
 _ALREADY_APPROVED_MSG = (
-    "{target} |bis already approved (or being checked for approval)." 
-    " Please ask staff if you want to change anything "
+    "{target} |mis already approved (or being checked for approval).|n\n" 
+    "Please ask staff if you want to change anything "
     "that you can't still change by yourself. Thanks!|n"
 )
 
@@ -437,15 +436,8 @@ class CmdChargenEquipMove(MuxCommand):
             return
 
         if not actual_movename in target.moves_known:
-            if not target.approved:
-                target.learn_move(self.caller, actual_movename)
-                self.msg(
-                    f"This is chargen, so {target.get_display_name(self.caller)} is "
-                    f"also learning {actual_movename}."
-                )
-            else:
-                self.msg(f"{target.get_display_name(self.caller)} doesn't know the move {actual_movename}.")
-                return
+            self.msg(f"{target.get_display_name(self.caller)} doesn't know the move {actual_movename}.")
+            return
         
         target.equip_move(self.caller, actual_movename)
         self.msg(f"{target.get_display_name(self.caller)} equipped {actual_movename}.")
@@ -510,14 +502,6 @@ class CmdChargenUnequipMove(MuxCommand):
             )
             return
 
-        if not target.approved:
-            target.forget_move(self.caller, actual_movename)
-            self.msg(
-                f"This is chargen, so {target.get_display_name(self.caller)} is "
-                f"also forgetting {actual_movename}."
-            )
-
-
         target.unequip_move(self.caller, actual_movename)
         self.msg(f"{target.get_display_name(self.caller)} unequipped {actual_movename}.")
 
@@ -560,7 +544,7 @@ class CmdChargenLearnMove(MuxCommand):
             return
         
         if actual_movename in target.moves_known:
-            self.msg(f"{target.get_display.name(self.caller)} doesn't know {actual_movename}")
+            self.msg(f"{target.get_display_name(self.caller)} already knows {actual_movename}")
             return
 
         target.learn_move(self.caller, actual_movename)
@@ -763,7 +747,10 @@ class CmdChargen(Command):
         target = self.caller
 
         if target.approved:
-            caller.msg(f"{target.get_display_name(caller)} |mis already approved for the IC grid. Have fun!|n")
+            caller.msg(
+                f"{target.get_display_name(caller)} |mis already approved (or being checked over for approval) "
+                "for the IC grid. Have fun!|n"
+            )
             return
         
         out = []
@@ -794,7 +781,7 @@ class CmdChargen(Command):
             not iv_tokens_remain and target.species
         ))
 
-        max_equipped = min(_STARTING_MOVES_EQUIPPED, _MAX_EQUIPPED_MOVES)
+        # max_equipped = min(_STARTING_MOVES_EQUIPPED, _MAX_EQUIPPED_MOVES)
 
         # is_correct_equipped = len(target.moves_equipped) == max_equipped
         is_correct_known = len(target.moves_known) == _STARTING_MOVES

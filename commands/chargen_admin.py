@@ -1,15 +1,24 @@
 
 import time
 
+from django.conf import settings
+
 from .command import MuxCommand, Command
 from evennia import GLOBAL_SCRIPTS
-from evennia.utils import string_suggestions
+from evennia.utils import string_suggestions, display_len
 
 from typeclasses.characters import Character, PlayerCharacter
 
+from world.utils import get_specialroom, get_defaulthome
 from world.monutils import get_display_mon_banner
 
 from .chargen import _MAX_EQUIPPED_MOVES
+
+_STARTING_MOVES = settings.STARTING_MOVES
+_MAX_EQUIPPED_MOVES = settings.MAX_EQUIPPED_MOVES
+_MIN_DESC = settings.DESIRED_MIN_DESC
+_OOC_TARGET = settings.TAG_OOC_TARGET
+
 
 class CmdAdminSetSpecies(MuxCommand):
     """
@@ -435,16 +444,9 @@ class CmdAdminEquipMove(MuxCommand):
             return
 
         if not actual_movename in target.moves_known:
-            if not target.approved:
-                target.learn_move(self.caller, actual_movename)
-                self.caller.msg(
-                    f"This is chargen, so {target.get_display_name(self.caller)} is "
-                    f"also learning {actual_movename}."
-                )
-            else:
-                self.caller.msg(f"{target.get_display_name(self.caller)} doesn't know the move {actual_movename}.")
-                return
-        
+            self.caller.msg(f"{target.get_display_name(self.caller)} doesn't know the move {actual_movename}.")
+            return
+    
         target.equip_move(self.caller, actual_movename)
         self.caller.msg(f"{target.get_display_name(self.caller)} equipped {actual_movename}.")
 
@@ -510,12 +512,6 @@ class CmdAdminUnequipMove(MuxCommand):
             )
             return
         
-        if not target.approved:
-            target.forget_move(self.caller, actual_movename)
-            self.msg(
-                f"This is chargen, so {target.get_display_name(self.caller)} is "
-                f"also forgetting {actual_movename}."
-            )
 
         target.unequip_move(self.caller, actual_movename)
         self.caller.msg(f"{target.get_display_name(self.caller)} unequipped {actual_movename}.")
@@ -631,3 +627,186 @@ class CmdAdminForgetMove(MuxCommand):
 
         target.forget_move(self.caller, actual_movename)
         self.caller.msg(f"{target.get_display_name(self.caller)} forgot {actual_movename}.")
+
+
+
+
+
+
+
+
+
+class CmdAdminApproveCharacter(MuxCommand):
+    """
+    Approve a character for IC. Will show you their data and any checks they don't pass.
+    
+    Usage:
+        @approve <target>
+    """
+    key = '@approve'
+    locks = "cmd:perm(Admin)"
+    help_category = "Chargen"
+
+    _usage = "Usage: @approve <target>"
+    
+
+    def func(self):
+
+        caller = self.caller
+        args = self.args.strip()
+
+        if not args:
+            self.msg(self._usage)
+            return
+        
+        target = caller.search(args)
+        if not target:
+            return
+        if not target.is_typeclass(PlayerCharacter):
+            # Because searching by typeclass isn't working fsr
+            self.msg("You can only approve player characters.")
+            return
+        
+        if target.approved:
+            self.msg(f"{target.get_display_name(caller)} is already approved for IC.")
+            return
+
+        finger = target.get_finger(caller, show_header=True)
+        sheet = target.get_statblock(caller, show_header=False)
+        desc = target.return_appearance(caller, show_header=False)
+
+        self.msg(text=(''.join((finger,sheet,'\n',desc)), {"type": "stats"}), options=None)
+
+        passing = True
+
+        if not target.species:
+            self.msg(f"{target.get_display_name(caller)} |Rdoes not have a species set.|n")
+            passing = False
+        if not target.nature:
+            self.msg(f"{target.get_display_name(caller)} |Rdoes not have a nature set.|n")
+            passing = False
+        if target.ivtokens_spent != target.ivtokens:
+            self.msg(f"{target.get_display_name(caller)} |Rhas not spent all their IV tokens.|n")
+            passing = False
+        if len(target.moves_known) != _STARTING_MOVES:
+            self.msg(f"{target.get_display_name(caller)} |Rdoes not have exactly {_STARTING_MOVES} moves known.|n")
+            passing = False
+        if display_len(target.get_display_desc(caller)) < _MIN_DESC:
+            self.msg(f"{target.get_display_name(caller)} |Rhas too short of a description.|n")
+            passing = False
+        if not target.sex:
+            self.msg(f"{target.get_display_name(caller)} |Rhas not set sex.|n")
+            passing = False
+        if not target.short_desc:
+            self.msg(f"{target.get_display_name(caller)} |Rhas not set short description.|n")
+            passing = False
+        if not target.full_name:
+            self.msg(f"{target.get_display_name(caller)} |Rhas not set full character name.|n")
+            passing = False
+        if not target.player_contact:
+            self.msg(f"{target.get_display_name(caller)} |Rhas not set player contact info.|n")
+            passing = False
+
+        target.approvelock(caller)
+
+        if not passing:
+            answer = yield (
+                f"{target.get_display_name(caller)} |rdoes not pass standard checks---|mtype 'YES' to approve anyway>|n"
+            )
+            if not answer.lower().strip().startswith('yes'):
+                self.msg("|xAborted.|n")
+                target.drop_approvelock(caller)
+                return
+        else: 
+            answer = yield f"{target.get_display_name(caller)} |gpasses all checks. |mApprove? [y/N]"
+            if not answer.lower().strip().startswith('y'):
+                target.drop_approvelock(caller)
+                self.msg("|xAborted.|n")
+                return
+        
+        target.approve(caller)
+        self.msg(f"{target.get_display_name(caller)} approved.")
+
+        if len(target.moves_known) > len(target.moves_equipped) and len(target.moves_equipped) < _MAX_EQUIPPED_MOVES:
+
+            # This is kind of clumsy but the purpose is to let the new player just LEARN moves
+            # during chargen , but then move all of them to being equipped afterwards. Then the
+            # equip/unequip commands can maybe be moved to the move manager object instead of
+            # chargen.
+
+            self.msg(f"|mEquipping unequipped moves on|n {target.get_display_name(caller)}")
+            target.msg(f"|mEquipping unequipped moves on|n {target.get_display_name(target)}")
+
+            for movename in target.moves_known:
+                if movename not in target.moves_equipped and len(target.moves_equipped) < _MAX_EQUIPPED_MOVES:
+                    target.equip_move(caller, movename)
+
+
+class CmdAdminUnapproveCharacter(MuxCommand):
+    """
+    Remove IC approval for a character. Will remove them from the IC grid if needed.
+    
+    Usage:
+        @unapprove <target>
+    """
+    key = '@unapprove'
+    locks = "cmd:perm(Admin)"
+    help_category = "Chargen"
+
+    _usage = "Usage: @unapprove <target>"
+    
+
+    def func(self):
+
+        caller = self.caller
+        args = self.args.strip()
+
+        if not args:
+            self.msg(self._usage)
+            return
+        
+        target = caller.search(args)
+        if not target:
+            return
+        if not target.is_typeclass(PlayerCharacter):
+            # Because searching by typeclass isn't working fsr
+            self.msg("You can only unapprove player characters.")
+            return
+        
+        if not target.approved:
+            self.msg(f"{target.get_display_name(caller)} is not approved anyway.")
+            return
+        
+        oocnex = get_specialroom(_OOC_TARGET)
+        oocnex = oocnex if oocnex else get_defaulthome()
+
+        if target.location.is_ic_room:
+            ic_warning = f" |rThis will remove|n {target.get_display_name(caller)} |rback to|n {oocnex.get_display_name()}.|n"
+        else:
+            ic_warning = ""
+
+        answer = yield (
+            f"{target.get_display_name(caller)} is currently approved for IC access. |mDo you want to remove this "
+            f"approval?|n{ic_warning} |mType 'yes' if so>"
+        )
+        if not answer.strip().lower().startswith("yes"):
+            self.msg("|xAborted.|n")
+            return
+        
+        if ic_warning:
+            target.msg(
+                f"{target.get_display_name(caller)} is being removed from the IC grid. When reapproved, "
+                f"use |b+ic|m to get back here.|n"
+            )
+
+            oldloc = target.location
+
+            if target.move_to(oocnex, move_type="ic-ooc"):
+                target.last_ic_room = oldloc
+            else:
+                target.msg(f"|mWell, something went wrong with moving {target.get_display_name(caller)}...|n")
+                caller.msg(f"|mSomething went wrong with moving {target.get_display_name(caller)}")
+
+        target.unapprove(caller)
+        caller.msg(f"{target.get_display_name(caller)} unapproved.")
+
