@@ -8,8 +8,6 @@ I'm just making this public to make things easier.
 
 # Todo list! - MVP
 
-- ConnectInfo is leaking peoples IPs and shit
-
 - Stats.
     - EVs
     - Affiliation
