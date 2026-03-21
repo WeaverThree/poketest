@@ -1,9 +1,13 @@
 
 import time
 
+from django.conf import settings
+
 from .command import Command, MuxCommand
-from world.utils import split_on_all_newlines, get_wordcount
+from world.utils import split_on_all_newlines, get_wordcount, get_defaulthome, get_specialroom
 from typeclasses.characters import Character, PlayerCharacter
+
+_TAG_OOC_TARGET = settings.TAG_OOC_TARGET
 
 class CmdOOC(Command):
     """
@@ -257,3 +261,64 @@ class CmdFullLook(Command):
         desc = target.return_appearance(caller, show_header=False)
 
         self.msg(text=(''.join((finger,sheet,'\n',desc)), {"type": "stats"}), options=None)
+
+
+class CmdTeleportOOC(Command):
+    """
+    Teleport yourself to the OOC nexus, marking where you were on the IC grid to return to with |b+ic|n later.
+
+    Usage:
+      +ooc
+    """
+
+    key = "+ooc"
+    locks = "cmd:all()"
+    # help_category = "People"
+
+    def func(self):
+
+        caller = self.caller
+
+        oldloc = caller.location
+
+        if not oldloc.is_ic_room:
+            caller.msg(f"{caller.get_display_name(caller)} is already off the IC grid.")
+            return
+
+        oocnex = get_specialroom(_TAG_OOC_TARGET)
+        oocnex = oocnex if oocnex else get_defaulthome()
+
+        if caller.move_to(oocnex, move_type="ic-ooc"):
+            caller.last_ic_room = oldloc
+        else:
+            caller.msg(f"|mSomething went wrong with moving {caller.get_display_name(caller)}")
+
+        
+class CmdTeleportIC(Command):
+    """
+    Teleport yourself back to the IC grid from where you used |b+ooc|n earlier.
+
+    Usage:
+      +ic
+    """
+
+    key = "+ic"
+    locks = "cmd:all()"
+    # help_category = "People"
+
+    def func(self):
+
+        caller = self.caller
+
+        if caller.location.is_ic_room:
+            caller.msg(f"{caller.get_display_name(caller)} is already on the IC grid.")
+            return
+        
+        if not caller.last_ic_room:
+            caller.msg(f"{caller.get_display_name(caller)} will have to walk.")
+            return
+
+        if caller.move_to(caller.last_ic_room, move_type="ic-ooc"):
+            caller.last_ic_room = None
+        else:
+            caller.msg(f"|mSomething went wrong with moving {caller.get_display_name(caller)}")

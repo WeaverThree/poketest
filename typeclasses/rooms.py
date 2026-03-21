@@ -69,6 +69,7 @@ class Room(ObjectParent, DefaultRoom):
                     if moved_obj.player_mode != "IC":
                         moved_obj.msg("|mMoving to IC grid, enetring IC mode.|n")
                         moved_obj.player_mode = "IC"
+                        moved_obj.last_ic_room = None # for +ic/ooc, touching the grid negates your cookie
                 else:
                     if moved_obj.player_mode != "OOC":
                         moved_obj.msg("|mLeaving IC grid, enetring OOC mode.|n")

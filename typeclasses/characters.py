@@ -549,6 +549,146 @@ class Character(ObjectParent, DefaultCharacter):
             self.db.prelogout_location = self.location # Just in case
             self.last_puppeted = time.time()
 
+    def announce_move_from(self, destination, msg=None, mapping=None, move_type="move", **kwargs):
+        """
+        Called if the move is to be announced. This is
+        called while we are still standing in the old
+        location.
+
+        Args:
+            destination (DefaultObject): The place we are going to.
+            msg (str, optional): a replacement message.
+            mapping (dict, optional): additional mapping objects.
+            move_type (str): The type of move. "give", "traverse", etc.
+                This is an arbitrary string provided to obj.move_to().
+                Useful for altering messages or altering logic depending
+                on the kind of movement.
+            **kwargs: Arbitrary, optional arguments for users
+                overriding the call (unused by default).
+
+        Notes:
+
+            You can override this method and call its parent with a
+            message to simply change the default message.  In the string,
+            you can use the following as mappings:
+
+            - `{object}`: the object which is moving.
+            - `{exit}`: the exit from which the object is moving (if found).
+            - `{origin}`: the location of the object before the move.
+            - `{destination}`: the location of the object after moving.
+
+        """
+        if not self.location:
+            return
+        if msg:
+            string = msg
+        else:
+            if move_type == "ic-ooc":
+                string = "{object} disappears in a digital flash from {origin}, heading for {destination}."
+            elif move_type == 'teleport':
+                string = "{object} disappears in an unexpected way from {origin}, heading for {destination}."
+            else:
+                string = "{object} is leaving {origin}, heading for {destination}."
+
+
+        location = self.location
+        exits = [
+            o for o in location.contents if o.location is location and o.destination is destination
+        ]
+        if not mapping:
+            mapping = {}
+
+        mapping.update(
+            {
+                "object": self,
+                "exit": exits[0] if exits else _("somewhere"),
+                "origin": location or _("nowhere"),
+                "destination": destination or _("nowhere"),
+            }
+        )
+
+        location.msg_contents(
+            (string, {"type": move_type}), exclude=(self,), from_obj=self, mapping=mapping
+        )
+
+    def announce_move_to(self, source_location, msg=None, mapping=None, move_type="move", **kwargs):
+        """
+        Called after the move if the move was not quiet. At this point
+        we are standing in the new location.
+
+        Args:
+            source_location (DefaultObject): The place we came from
+            msg (str, optional): the replacement message if location.
+            mapping (dict, optional): additional mapping objects.
+            move_type (str): The type of move. "give", "traverse", etc.
+                This is an arbitrary string provided to obj.move_to().
+                Useful for altering messages or altering logic depending
+                on the kind of movement.
+            **kwargs: Arbitrary, optional arguments for users
+                overriding the call (unused by default).
+
+        Notes:
+
+            You can override this method and call its parent with a
+            message to simply change the default message.  In the string,
+            you can use the following as mappings (between braces):
+
+
+            - `{object}`: the object which is moving.
+            - `{exit}`: the exit from which the object is moving (if found).
+            - `{origin}`: the location of the object before the move.
+            - `{destination}`: the location of the object after moving.
+
+        """
+
+        if not source_location and self.location.has_account:
+            # This was created from nowhere and added to an account's
+            # inventory; it's probably the result of a create command.
+            string = _("You now have {name} in your possession.").format(
+                name=self.get_display_name(self.location)
+            )
+            self.location.msg(string)
+            return
+
+        if source_location:
+            if msg:
+                string = msg
+            else:
+                if move_type == "ic-ooc":
+                    string = "{object} appears in a digital flash at {destination}, from {origin}."
+                if move_type == "teleport":
+                    string = "{object} appears in an unexpected way at {destination}, from {origin}."
+                else:
+                    string = "{object} arrives in {destination} from {origin}."
+        else:
+            string = "{object} arrives in {destination}."
+
+        origin = source_location
+        destination = self.location
+        exits = []
+        if origin:
+            exits = [
+                o
+                for o in destination.contents
+                if o.location is destination and o.destination is origin
+            ]
+
+        if not mapping:
+            mapping = {}
+
+        mapping.update(
+            {
+                "object": self,
+                "exit": exits[0] if exits else _("somewhere"),
+                "origin": origin or _("nowhere"),
+                "destination": destination or _("nowhere"),
+            }
+        )
+
+        destination.msg_contents(
+            (string, {"type": move_type}), exclude=(self,), from_obj=self, mapping=mapping
+        )
+
 
 
 class PlayerCharacter(Character):

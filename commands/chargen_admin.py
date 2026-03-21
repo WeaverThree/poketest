@@ -17,7 +17,7 @@ from .chargen import _VALID_FIELDS
 _STARTING_MOVES = settings.STARTING_MOVES
 _MAX_EQUIPPED_MOVES = settings.MAX_EQUIPPED_MOVES
 _MIN_DESC = settings.DESIRED_MIN_DESC
-_OOC_TARGET = settings.TAG_OOC_TARGET
+_TAG_OOC_TARGET = settings.TAG_OOC_TARGET
 
 
 class CmdAdminSetSpecies(MuxCommand):
@@ -891,7 +891,7 @@ class CmdAdminUnapproveCharacter(MuxCommand):
             self.msg(f"{target.get_display_name(caller)} is not approved anyway.")
             return
         
-        oocnex = get_specialroom(_OOC_TARGET)
+        oocnex = get_specialroom(_TAG_OOC_TARGET)
         oocnex = oocnex if oocnex else get_defaulthome()
 
         if target.location.is_ic_room:
