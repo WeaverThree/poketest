@@ -29,6 +29,7 @@ from . import userlisting
 from . import general
 from . import building
 from . import dice
+from . import pathfinding
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
@@ -133,6 +134,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(mons.CmdRandMons())
         self.add(mons.CmdMoveLookup())
         self.add(mons.CmdRandMoves())
+        self.add(pathfinding.CmdPathfind())
         self.add(userlisting.CmdWho())
         self.add(userlisting.CmdWhat())
         self.add(userlisting.CmdStaff())

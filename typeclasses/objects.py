@@ -238,7 +238,7 @@ class ObjectParent:
         # For reasons entirely unclear to me, roomname, extra_name_info, and desc need to be
         # subscripted here...
 
-        header = header_two_slot(_WIDTH, f"|w{roomname[0]}{extra_name_info[0]}|n", f"|w{zone}|n")
+        header = header_two_slot(_WIDTH, f"|w{roomname[0]}{extra_name_info[0]}|n", f"|w{zone}|n" if zone else None)
 
         lasttime = time_format(time.time() - self.last_ic_talk_time_loc, 0) if self.last_ic_talk_time_loc else "Never"
         tmp_last_talk_time = f"(TMP) Last Talk: {lasttime} Wordcount here: {self.ic_wordcount_loc}"
