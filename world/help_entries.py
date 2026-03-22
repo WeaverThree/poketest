@@ -25,34 +25,39 @@ Each dict is on the form
 """
 
 HELP_ENTRY_DICTS = [
-    # {
-    #     "key": "evennia",
-    #     "aliases": ["ev"],
-    #     "category": "General",
-    #     "locks": "read:perm(Developer)",
-    #     "text": """
-    #         Evennia is a MU-game server and framework written in Python. You can read more
-    #         on https://www.evennia.com.
-
-    #         # subtopics
-
-    #         ## Installation
-
-    #         You'll find installation instructions on https://www.evennia.com.
-
-    #         ## Community
-
-    #         There are many ways to get help and communicate with other devs!
-
-    #         ### Discussions
-
-    #         The Discussions forum is found at https://github.com/evennia/evennia/discussions.
-
-    #         ### Discord
-
-    #         There is also a discord channel for chatting - connect using the
-    #         following link: https://discord.gg/AJJpcRUhtF
-
-    #     """,
-    # },
+    {
+         "key": "welcome",
+         "category": "world",
+         "text": """
+         This is an example help entry that we can put on the website maybe, let's see if it works?
+         """,
+    },
+        {
+         "key": "pkmn-below",
+         "category": "world",
+         "text": """
+         This is an example help entry that we can put on the website maybe, let's see if it works?
+         """,
+    },
+        {
+         "key": "species",
+         "category": "world",
+         "text": """
+         This is an example help entry that we can put on the website maybe, let's see if it works?
+         """,
+    },
+        {
+         "key": "morphs",
+         "category": "world",
+         "text": """
+         This is an example help entry that we can put on the website maybe, let's see if it works?
+         """,
+    },
+        {
+         "key": "idk",
+         "category": "world",
+         "text": """
+         This is an example help entry that we can put on the website maybe, let's see if it works?
+         """,
+    },
 ]
