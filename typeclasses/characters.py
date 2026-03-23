@@ -423,6 +423,24 @@ class Character(ObjectParent, DefaultCharacter):
         if movename in self.moves_known:
             self.moves_known.remove(movename)
 
+
+    def refresh_one(self, movename):
+        """Refreshes a move. Returns true if a refresh actually happened, false if uses were already at 0"""
+        
+        if movename in self.moves_equipped:
+            if self.moves_equipped[movename]:
+                self.moves_equipped[movename] = 0
+                return True
+        # Not sure what we should do if move not equipped here but it shouldn't come up much...
+        return False
+            
+
+    def refresh_all(self):
+        """Refreshes all moves. Returns true if any rereshes happened, false if all uses were at 0"""
+
+        return any([self.refresh_one(movename) for movename in self.moves_equipped])
+
+
     def start_following(self, target):
         
         if self.following:
@@ -949,24 +967,6 @@ class PlayerCharacter(Character):
         self.logaudit(msg)
         if caller != self:
             self.msg(msg)
-
-
-    def refresh_one(self, movename):
-        """Refreshes a move. Returns true if a refresh actually happened, false if uses were already at 0"""
-        
-        if movename in self.moves_equipped:
-            print( f"Refreshing {movename} on {self}.")
-            if self.moves_equipped[movename]:
-                self.moves_equipped[movename] = 0
-                return True
-        # Not sure what we should do if move not equipped here but it shouldn't come up much...
-        return False
-            
-
-    def refresh_all(self):
-        """Refreshes all moves. Returns true if any rereshes happened, false if all uses were at 0"""
-
-        return any([self.refresh_one(movename) for movename in self.moves_equipped])
 
 
     @property 
