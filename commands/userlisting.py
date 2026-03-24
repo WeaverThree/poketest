@@ -5,9 +5,10 @@ from django.conf import settings  # type: ignore
 
 import evennia
 from evennia.utils import utils, evtable, crop
-from typeclasses.accounts import Account
+from evennia.utils.ansi import ANSIString
 
 from .command import Command, MuxCommand
+from typeclasses.accounts import Account
 from world.monutils import get_display_mon_name, get_display_mon_type, get_display_mon_banner
 
 _WIDTH = settings.OUR_WIDTH
@@ -115,7 +116,9 @@ class CmdWho(MuxCommand):
                 border_width=0,                                  
             )
 
-        self.msg(f"\n{table}\n  {naccounts} online. Use |bwhat|n for more details about people.")
+        self.msg(f"{table}\n  {naccounts} online.\n")
+
+
 
 _colorsex = {
     "A": "|gA|n",
@@ -124,6 +127,7 @@ _colorsex = {
     "N": "|yN|n",
     "": "|[r|X?|n",
 }
+
 
 class CmdWhat(MuxCommand):
     """
@@ -134,7 +138,7 @@ class CmdWhat(MuxCommand):
     """
 
     key = "what"
-    locks = "cmd:all()"
+    locks = "cmd:perm(Admin)"
     help_category = "People"
 
     def func(self):
@@ -186,7 +190,80 @@ class CmdWhat(MuxCommand):
         table.reformat_column(1,align='c')
         table.reformat_column(2,align="a")
 
-        self.msg(f"\n{table}\n  {naccounts} online. Use |bwho|n for more details about people.")
+        self.msg(f"{table}\n  {naccounts} online.\n")
+
+
+class CmdGlance(MuxCommand):
+    """
+    A more detailed list of who's in the current area.
+
+    Usage:
+        glance
+    """
+
+    key = "glance"
+    locks = "cmd:all()"
+    help_category = "People"
+
+    def func(self):
+        """
+        Get all connected accounts by polling session.
+        """
+
+        caller = self.caller
+
+        names = []
+        sexes = []
+        species = []
+        shortdescs = []
+        
+        affiliations = []
+        ranks = []
+
+
+        for character in sorted(caller.location.contents_get(content_type="character"), key = lambda x: x.name.lower()):
+            
+            names.append(character.get_display_name(caller))
+            
+            sexes.append(_colorsex[character.sex[0] if character.sex else ''])
+
+            species.append(get_display_mon_banner(character))
+
+            shortdescs.append(character.short_desc)
+
+            affiliations.append(character.faction)
+            ranks.append(character.rank)
+
+            header = (
+                "|wName|n",
+                "|wSex|n",
+                "|wSpecies|n",
+                "|wAffiliation|n",
+                "|wRank|n",
+            )
+
+        table = evtable.EvTable(
+            *header, table=(names,sexes,species, affiliations, ranks),
+            border_width=0,                              
+        )
+        table.reformat_column(1,align='c')
+        table.reformat_column(2,align="a")
+        
+        lines = table.get()
+
+        out = [str(str(ANSIString(lines[0])))]
+        
+        for tableline, sdesc in zip(lines[1:], shortdescs):
+            out.append(str(str(ANSIString(tableline))))
+            out.append(f"    {sdesc}")
+        
+        out.append('')
+
+        self.msg('\n'.join(out))
+
+
+
+
 
 
 def _getpuppet(account):

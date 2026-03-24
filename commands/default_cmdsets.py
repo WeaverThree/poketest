@@ -141,6 +141,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(pathfinding.CmdPathfind())
         self.add(userlisting.CmdWho())
         self.add(userlisting.CmdWhat())
+        self.add(userlisting.CmdGlance())
         self.add(userlisting.CmdStaff())
         self.add(userlisting.CmdStatus())
         self.add(userlisting.CmdStaffInfo())

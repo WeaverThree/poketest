@@ -298,6 +298,8 @@ class CmdChargenSetNature(Command):
 
         self.msg(f"{target.get_display_name(looker=self.caller)} updated.")
 
+def _sif(count, s='s'):
+    return s if count != 1 else ''
 
 class CmdChargenBuyIVs(MuxCommand):
     """
@@ -336,7 +338,7 @@ class CmdChargenBuyIVs(MuxCommand):
         if not (stat and amount):
             self.msg(self._usage)
             self.msg(
-                f"{target.get_display_name(self.caller)} has |r{remaining}|n IV tokens left to spend. "
+                f"{target.get_display_name(self.caller)} has |r{remaining}|n IV token{_sif(remaining)} left to spend. "
                 f"Use |b+stats|n to see how they're currently allocated, or |b+resetivs|n to start over."
             )
             return
@@ -367,7 +369,7 @@ class CmdChargenBuyIVs(MuxCommand):
         
         question = (
             f"Spend {amount} of {target.get_display_name(looker=self.caller)}'s {remaining} " 
-            f"remaining IV tokens to raise "
+            f"remaining IV token{_sif(remaining)} to raise "
             f"{stat}'s IVs from {target.ivs[stat]} to {target.ivs[stat] + amount * 3}? [y/N]"
         )
 
@@ -911,7 +913,7 @@ class CmdChargenBuyEVs(MuxCommand):
         if not (stat and amount):
             self.msg(self._usage)
             self.msg(
-                f"{target.get_display_name(self.caller)} has |r{remaining}|n EV tokens left to spend. "
+                f"{target.get_display_name(self.caller)} has |r{remaining}|n EV token{_sif(remaining)} left to spend. "
                 f"Use |b+stats|n to see what's up."
             )
             return
@@ -955,7 +957,7 @@ class CmdChargenBuyEVs(MuxCommand):
         
         question = (
             f"Spend {amount} of {target.get_display_name(looker=self.caller)}'s {remaining} " 
-            f"remaining EV tokens to raise "
+            f"remaining EV token{_sif(remaining)} to raise "
             f"{stat}'s EVs from {target.evs[stat]} to {target.evs[stat] + amount * 4}? [y/N]"
         )
 
@@ -967,4 +969,4 @@ class CmdChargenBuyEVs(MuxCommand):
         
         target.spend_ev_tokens(self.caller, stat, amount)
 
-        self.msg(f"{target.get_display_name(looker=self.caller)} updated.")
+        self.msg(f"{target.get_display_name(looker=self.caller)} updated.") 
