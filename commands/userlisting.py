@@ -1,15 +1,17 @@
 
 import time
+import math
 
 from django.conf import settings  # type: ignore
 
 import evennia
-from evennia.utils import utils, evtable, crop
+from evennia.utils import utils, evtable, crop, display_len
 from evennia.utils.ansi import ANSIString
 
 from .command import Command, MuxCommand
 from typeclasses.accounts import Account
-from world.monutils import get_display_mon_name, get_display_mon_type, get_display_mon_banner
+from world.utils import header_two_slot
+from world.monutils import get_display_mon_banner, get_inline_mon_banner_nodex
 
 _WIDTH = settings.OUR_WIDTH
 
@@ -32,9 +34,7 @@ class CmdWho(MuxCommand):
     help_category = "People"
 
     def func(self):
-        """
-        Get all connected accounts by polling session.
-        """
+
         session_list = evennia.SESSION_HANDLER.get_sessions()
         session_list = sorted(session_list, key=lambda ses: ses.puppet.key if ses.puppet else "---"+ses.account.key)
 
@@ -116,7 +116,9 @@ class CmdWho(MuxCommand):
                 border_width=0,                                  
             )
 
-        self.msg(f"{table}\n  {naccounts} online.\n")
+        header = header_two_slot(_WIDTH, "|wWho's Online|n", headercolor="|M")
+
+        self.msg(f"{header}\n{table}\n  {naccounts} online.\n")
 
 
 
@@ -142,9 +144,7 @@ class CmdWhat(MuxCommand):
     help_category = "People"
 
     def func(self):
-        """
-        Get all connected accounts by polling session.
-        """
+
         session_list = evennia.SESSION_HANDLER.get_sessions()
         session_list = sorted(session_list, key=lambda ses: ses.puppet.key if ses.puppet else "---"+ses.account.key)
 
@@ -190,7 +190,9 @@ class CmdWhat(MuxCommand):
         table.reformat_column(1,align='c')
         table.reformat_column(2,align="a")
 
-        self.msg(f"{table}\n  {naccounts} online.\n")
+        header = header_two_slot(_WIDTH, "|wWhat's Online|n", headercolor="|M")
+
+        self.msg(f"{header}\n{table}\n  {naccounts} online.\n")
 
 
 class CmdGlance(MuxCommand):
@@ -206,56 +208,55 @@ class CmdGlance(MuxCommand):
     help_category = "People"
 
     def func(self):
-        """
-        Get all connected accounts by polling session.
-        """
 
         caller = self.caller
 
-        names = []
-        sexes = []
-        species = []
-        shortdescs = []
-        
-        affiliations = []
-        ranks = []
+        # data = []
+        # shortdescs = []
+        # header = (
+        #     "|wData|n",
+        #     "|wShort Description|n",
+        # )
+        # table = evtable.EvTable(
+        #     *header, table=(data, shortdescs),
+        #     border_width=0, width=140,                              
+        # )
 
+        # maxline = 0
+
+        # for character in sorted(caller.location.contents_get(content_type="character"), key = lambda x: x.name.lower()):
+            
+        #     line1 = f"{character.faction} {character.rank} {character.get_display_name(caller)}"
+        #     line2 = f"{get_display_mon_banner(character)}"
+
+        #     data = evtable.EvCell(f"{line1}\n{line2}\n")
+
+        #     maxline = max(maxline, display_len(line1), display_len(line2))
+            
+        #     table.add_row(data, character.short_desc)
+
+        # table.reformat_column(0, align='a', valign='t', width=45)
+        # table.reformat_column(1, valign='t')
+        
+        # headercenter = "< In This Room >"
+        # headerleft = ">-"
+        # headerright = "--"
+        # fill = _WIDTH - display_len(headercenter) - display_len(headerleft) - display_len(headerright)
+        # fill1 = math.ceil(fill/2.0)
+        # fill2 = math.floor(fill/2.0)
+        # header = f"{headerleft}{'-' * fill1}{headercenter} ----
+
+        out = [header_two_slot(
+            _WIDTH, f"|wGlancing Around {caller.location.get_display_name(caller)}|n", headercolor="|M"
+        )]
 
         for character in sorted(caller.location.contents_get(content_type="character"), key = lambda x: x.name.lower()):
-            
-            names.append(character.get_display_name(caller))
-            
-            sexes.append(_colorsex[character.sex[0] if character.sex else ''])
-
-            species.append(get_display_mon_banner(character))
-
-            shortdescs.append(character.short_desc)
-
-            affiliations.append(character.faction)
-            ranks.append(character.rank)
-
-            header = (
-                "|wName|n",
-                "|wSex|n",
-                "|wSpecies|n",
-                "|wAffiliation|n",
-                "|wRank|n",
+            out.append(
+                f"    {character.get_display_name(caller)}: "
+                f"{get_inline_mon_banner_nodex(character, capstart=True)} "
+                f"{character.faction} {character.rank} - "
+                f"{character.short_desc}"
             )
-
-        table = evtable.EvTable(
-            *header, table=(names,sexes,species, affiliations, ranks),
-            border_width=0,                              
-        )
-        table.reformat_column(1,align='c')
-        table.reformat_column(2,align="a")
-        
-        lines = table.get()
-
-        out = [str(str(ANSIString(lines[0])))]
-        
-        for tableline, sdesc in zip(lines[1:], shortdescs):
-            out.append(str(str(ANSIString(tableline))))
-            out.append(f"    {sdesc}")
         
         out.append('')
 

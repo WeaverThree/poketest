@@ -185,6 +185,19 @@ def get_inline_mon_banner(mon, capstart=False):
         return f"{get_inline_mon_type(mon, capstart)} #{mon['dexno']} {get_display_mon_name(mon)}"
 
 
+def get_inline_mon_banner_nodex(mon, capstart=False):
+
+    from typeclasses.characters import Character
+
+    # We're distingushing betweend dicts and characters here so can't use is_typeclass
+    if not mon:
+        return f"{get_inline_mon_type(mon, capstart)} {get_display_mon_name(mon)}"
+    elif isinstance(mon, Character):
+        return f"{get_inline_mon_type(mon, capstart)} {get_display_mon_name(mon)}"
+    else:
+        return f"{get_inline_mon_type(mon, capstart)} {get_display_mon_name(mon)}"
+
+
 def moves_table(movelist, usedlist=None, useheader=True):
     """
     Returns a table of nicely formated moves. If usedlist is provided, it will show remaining moves.
