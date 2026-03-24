@@ -689,47 +689,7 @@ class CmdChargenSetInfo(MuxCommand):
             target.player_contact = text
 
         self.msg(f"{target.get_display_name(self.caller)} updated.")
-        
-
-class CmdChargenSetSex(MuxCommand):
-    """
-    Set your character's apparent sex.
-
-    Do you appear |wM|nale, |wF|nemale, |wA|nndrogynous, |wN|neuter.
-
-    Usage:
-        +setsex <sex>
-    """
-    key = '+setsex'
-    locks = "cmd:all()"
-    help_category = "Chargen"
-
-    _usage = "Usage: +setsex [sex]"
-
-    def func(self):
-        
-        target = self.caller
-        field = self.args
-        
-        if not field:
-            sex = target.sex
-            self.msg(f"{target.get_display_name()}'s apparent sex is |b{sex if sex else '<NOT SET>'}|n.")
-
-        field = field.lower()
-        if field.startswith('a'):
-            target.sex = 'Androgynous'
-        elif field.startswith('f'):
-            target.sex = 'Female'
-        elif field.startswith('m'):
-            target.sex = 'Male'
-        elif field.startswith('n'):
-            target.sex = 'Neuter'
-        else:
-            self.msg("Please pick from |bandrogynous|n, |bfemale|n, |bmale|n, |bneuter|n.")
-            return
-
-        self.msg(f"{target.get_display_name(self.caller)} is now {target.sex}.")
-        
+          
         
 def _checkboxline(line, cond):
     if cond:
@@ -790,25 +750,11 @@ class CmdChargen(Command):
             not iv_tokens_remain and target.species
         ))
 
-        # max_equipped = min(_STARTING_MOVES_EQUIPPED, _MAX_EQUIPPED_MOVES)
-
-        # is_correct_equipped = len(target.moves_equipped) == max_equipped
         is_correct_known = len(target.moves_known) == _STARTING_MOVES
-
-        # equipped_color = "|g" if is_correct_equipped else "|r"
         known_color = "|g" if is_correct_known else "|r"
-
-        # equipped_moves_line = f"{equipped_color}{len(target.moves_equipped)}|n/{max_equipped} moves equipped."
         known_moves_line = f"{known_color}{len(target.moves_known)}|n/{_STARTING_MOVES} moves known."
 
-        # equipped_help = " See |bhelp +equipmove|n and |bhelp +uneqipmove|n." if not is_correct_equipped else ""
         known_help = " See |bhelp +learnmove|n and |bhelp +forgetmove|n." if not is_correct_known else ""
-
-
-        # out.append(_checkboxline(
-        #     f"|wMoves:|n {equipped_moves_line}{equipped_help}",
-        #     is_correct_equipped
-        # ))
 
         out.append(_checkboxline(
             f"|wMoves:|n {known_moves_line}{known_help}",
@@ -829,11 +775,6 @@ class CmdChargen(Command):
             desc_len > _MIN_DESC
         ))
         
-        out.append(_checkboxline(
-            f"|wSex:|n {target.sex if target.sex else 'See |bhelp +setsex|n'}.",
-            target.sex
-        ))
-
         sdesc_len = display_len(target.short_desc)
         if not sdesc_len:
             sdesc_line = "See |bhelp +setinfo|n (|b+setinfo sdesc=...|n)"
@@ -844,7 +785,7 @@ class CmdChargen(Command):
 
         out.append(_checkboxline(
             f"|wShort Desc:|n {sdesc_line}",
-            target.sex
+            target.short_desc
         ))
 
         out.append(_checkboxline(
@@ -871,7 +812,7 @@ class CmdChargen(Command):
 
         if all((
             target.species, target.nature, not iv_tokens_remain, is_correct_known, desc_len > _MIN_DESC,
-            target.sex, sdesc_len, target.full_name, target.player_contact
+            sdesc_len, target.full_name, target.player_contact
         )):
             out.append(
                 f"{target.get_display_name(caller)} |gis ready for approval. Please contact staff to continue.|n"

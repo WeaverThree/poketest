@@ -703,56 +703,6 @@ class CmdChargenAdminSetInfo(MuxCommand):
         self.msg(f"{target.get_display_name(self.caller)} updated.")
         
 
-class CmdChargenAdminSetSex(MuxCommand):
-    """
-    Set your character's apparent sex.
-
-    Do you appear |wM|nale, |wF|nemale, |wA|nndrogynous, |wN|neuter.
-
-    Usage:
-        @setsex <target> [= sex]
-    """
-    key = '@setsex'
-    locks = "cmd:perm(Admin)"
-    help_category = "Chargen"
-
-    _usage = "Usage: @setsex <target> [= sex]"
-
-    def func(self):
-        
-        if not self.lhs:
-            self.msg(self._usage)
-            return
-
-        target = self.caller.search(self.lhs)
-        
-        if not target:
-            return
-        
-        if not target.is_typeclass(Character):
-            self.msg("This command only works on characters.")
-            return
-        
-        if not self.rhs:
-            sex = target.sex
-            self.msg(f"{target.get_display_name()}'s apparent sex is |b{sex if sex else '<NOT SET>'}|n.")
-
-        field = self.rhs.lower()
-        if field.startswith('a'):
-            target.sex = 'Androgynous'
-        elif field.startswith('f'):
-            target.sex = 'Female'
-        elif field.startswith('m'):
-            target.sex = 'Male'
-        elif field.startswith('n'):
-            target.sex = 'Neuter'
-        else:
-            self.msg("Please pick from |bandrogynous|n, |bfemale|n, |bmale|n, |bneuter|n.")
-            return
-
-        self.msg(f"{target.get_display_name(self.caller)} is now {target.sex}.")
-
-
 class CmdAdminApproveCharacter(MuxCommand):
     """
     Approve a character for IC. Will show you their data and any checks they don't pass.
@@ -810,9 +760,6 @@ class CmdAdminApproveCharacter(MuxCommand):
             passing = False
         if display_len(target.get_display_desc(caller)) < _MIN_DESC:
             self.msg(f"{target.get_display_name(caller)} |Rhas too short of a description.|n")
-            passing = False
-        if not target.sex:
-            self.msg(f"{target.get_display_name(caller)} |Rhas not set sex.|n")
             passing = False
         if not target.short_desc:
             self.msg(f"{target.get_display_name(caller)} |Rhas not set short description.|n")

@@ -123,16 +123,6 @@ class CmdWho(MuxCommand):
         self.msg(f"{header}\n{table}\n  {naccounts} online.\n")
 
 
-
-_colorsex = {
-    "A": "|gA|n",
-    "F": "|rF|n",
-    "M": "|bM|n",
-    "N": "|yN|n",
-    "": "|[r|X?|n",
-}
-
-
 class CmdWhat(MuxCommand):
     """
     list what everyone who is currently online is
@@ -153,7 +143,6 @@ class CmdWhat(MuxCommand):
         naccounts = evennia.SESSION_HANDLER.account_count()
 
         names = []
-        sexes = []
         species = []
         shortdescs = []
 
@@ -172,21 +161,18 @@ class CmdWhat(MuxCommand):
             
             names.append(crop(name, 25,"…"))
             
-            sexes.append(_colorsex[puppet.sex[0] if puppet and puppet.sex else ''])
-
             species.append(get_display_mon_banner(puppet))
 
             shortdescs.append(crop(puppet.short_desc if puppet else "", 100,'…'))
 
             header = (
                 "|wName|n",
-                "|wSex|n",
                 "|wSpecies|n",
                 "|wShort Description|n",
             )
 
         table = evtable.EvTable(
-            *header, table=(names,sexes,species,shortdescs),
+            *header, table=(names,species,shortdescs),
             border_width=0,                              
         )
         table.reformat_column(1,align='c')

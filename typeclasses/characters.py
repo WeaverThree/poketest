@@ -162,8 +162,6 @@ class Character(ObjectParent, DefaultCharacter):
 
     # Profile Properties
 
-    sex = AttributeProperty("")
-
     short_desc = AttributeProperty("")
     full_name = AttributeProperty("")
     player_name = AttributeProperty("")
@@ -306,7 +304,6 @@ class Character(ObjectParent, DefaultCharacter):
         out.append(f" |w{self.short_desc}|n")
         out.append(f" |bFull Name:|n {self.full_name}")
         out.append(
-            f" |bSex:|n {self.sex:12}"
             f" |bAffiliation:|n {self.faction:20}"
             f" |bRank:|n {self.rank}"
         )
