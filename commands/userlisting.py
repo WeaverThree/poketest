@@ -13,7 +13,7 @@ from .command import Command, MuxCommand
 from typeclasses.accounts import Account
 from typeclasses.characters import PlayerCharacter
 from world.utils import header_two_slot, is_staff_character
-from world.monutils import get_display_mon_banner, get_inline_mon_banner_nodex
+from world.monutils import get_display_mon_banner, get_inline_mon_banner_nodex, get_display_mon_name
 
 _WIDTH = settings.OUR_WIDTH
 
@@ -224,8 +224,7 @@ class CmdRoster(MuxCommand):
 
     Switches:
         /bycount - Sort by count, then by dexno.
-        /onecol - For narrow terminals
-    
+
     Usage:
         +roster
         +roster/bycount
@@ -240,6 +239,11 @@ class CmdRoster(MuxCommand):
         mondata = evennia.GLOBAL_SCRIPTS.mondata
 
         mons = defaultdict(int)
+        fulltypes = defaultdict(int)
+        halftypes = defaultdict(int)
+        totaltypes = defaultdict(int)
+        fullmons = 0
+        halfmons = 0
 
         for character in PlayerCharacter.objects.all_family():
             mon = {}
@@ -249,8 +253,20 @@ class CmdRoster(MuxCommand):
                 continue
             
             key = (character.dexno, character.subtype, character.form)
-
             mons[key] += 1
+
+            if character.type2:
+                halftypes[character.type1] += 1
+                halftypes[character.type2] += 1
+                totaltypes[character.type1] += 1
+                totaltypes[character.type2] += 1
+                halfmons += 1
+            else:
+                fulltypes[character.type1] += 1
+                totaltypes[character.type1] += 1
+                fullmons += 1
+            
+
 
         out = []
 
@@ -272,22 +288,46 @@ class CmdRoster(MuxCommand):
 
             mon = mon[0]
 
-            count = "#" * count if count < 5 else count
+            count = "+" * count if count < 5 else count
 
-            out.append(f" {count:>5} {get_display_mon_banner(mon)}")
+            out.append(f"{count:>4} #{dexno} {get_display_mon_name(mon, showform=False, subfilter=True)}")
         
-        if not 'onecol' in self.switches:
-            half = math.ceil(len(out) / 2.0)
-            table = evtable.EvTable(table=(out[:half],out[half:]), border_width=0)
-            table.reformat_column(0, align='a')
-            table.reformat_column(1, align='a')
-        else:
-            table = evtable.EvTable(table=(out,), border_width=0)
-            table.reformat_column(0, align='a')
+        half = math.ceil(len(out) / 2.0)
+        table = evtable.EvTable(table=(out[:half],out[half:]), border_width=0)
+        table.reformat_column(0, align='a', width=37)
+        table.reformat_column(1, align='a', width=37)
 
-        header = header_two_slot(_WIDTH, "|wServer Type Roster|n", headercolor="|M")
+
+        header = header_two_slot(_WIDTH, "|wServer Species Roster|n", headercolor="|M")
+
+        headertypes = header_two_slot(_WIDTH, "|wServer Type Roster|n", headercolor="|M")
+
+        if 'bycount' in self.switches:
+            ordertypes = sorted(totaltypes, key=lambda t:(totaltypes[t],t))
+        else:
+            ordertypes = sorted(totaltypes)
+
+        typeout = []
+
+        for type in ordertypes:
+            token = mondata.types[type]['doubletoken']
+            totalcount = totaltypes[type]
+            halfcount = halftypes[type]
+            fullcount = fulltypes[type]
+
+            typeout.append(f"     {token} {totalcount} |x({fullcount}/{halfcount})|n")
+        
+        typehalf = math.ceil(len(typeout) / 2.0)
+        typetable = evtable.EvTable(table=(typeout[:typehalf],typeout[typehalf:]), border_width=0)
+        typetable.reformat_column(0, align='a', width=37)
+        typetable.reformat_column(1, align='a', width=37)
+
         
         self.caller.msg(f"{header}\n{table}\n")
+
+        self.caller.msg(
+            f"{headertypes}\n{typetable}\n  {fullmons} single-type creatures, {halfmons} dual-type creatures\n"
+        )
             
 
 
