@@ -8,6 +8,7 @@ with a location in the game world (like Characters, Rooms, Exits).
 
 """
 
+import re
 import string
 import time
 import typing
@@ -27,6 +28,7 @@ from world.utils import builder_notice, replace_mush_escapes, header_two_slot, g
 _TALKERS_LIST_HOLD_TIME = settings.TALKERS_LIST_HOLD_TIME
 _WIDTH = settings.OUR_WIDTH
 _INFLECT = inflect.engine()
+
 _EXIT_NAME_ORDER = ["[N]", "[NE", "[E]", "[SE", "[S]", "[SW", "[W]", "[NW", "[U]", "[D]", "[I]", "[IN", "[O]"]
 def _exit_name_sort_key(exitname):
     """
@@ -48,6 +50,10 @@ class ObjectParent:
     This is a mixin that can be used to override *all* entities inheriting at
     some distance from DefaultObject (Objects, Exits, Characters and Rooms).
     """
+
+    # Will be on at least rooms and characters...
+    # features = {'caseless featurename': {'name': 'Caseless FeatureName', 'desc': 'description'}, ...}
+    features = AttributeProperty({})
 
     # This goes here so we don't have to worry about if we're contained in a room
     last_ic_talk_time_loc = AttributeProperty(0, category="talkmonitor")

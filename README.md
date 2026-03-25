@@ -12,22 +12,19 @@ I'm just making this public to make things easier.
 
 - skill swapper object
 
-- teleport command
-
-- modify AUP room for minimal jail use
-
-- prune unused zones (no name no rooms no desc) on @zoneinfo
-
-- Feature field dictionary for players and locations
-    - "'s" look feature
+- vote for offline people? idle people? talk IC inside the last hour maybe?
 
 - special teleport command for teleport users
     - other movement abilities?
 
-- Figure out what we're going to do about UTF characters
-- Test other mu clients
+- prune unused zones (no name no rooms no desc) on @zoneinfo
+
+- modify AUP room for minimal jail use
 
 - change setinfo and other commands that use target=var,data or target=var:data to use target/var=data, like @set does.
+
+- Figure out what we're going to do about UTF characters
+- Test other mu clients
 
 # Todo List - Future
 

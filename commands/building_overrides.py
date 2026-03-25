@@ -8,9 +8,8 @@ from evennia.utils.utils import (
     class_from_module,
 )
 
+from .command import Command, MuxCommand
 from typeclasses.characters import PlayerCharacter
-
-COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
 # destroy and wipe will not target player characters. desc doesn't autotarget here. unlink gains @
 
@@ -34,7 +33,7 @@ def _desc_quit(caller):
 
 
 
-class CmdDesc(COMMAND_DEFAULT_CLASS):
+class CmdDesc(MuxCommand):
     """
     describe an object or the current room.
 
@@ -63,7 +62,10 @@ class CmdDesc(COMMAND_DEFAULT_CLASS):
             return
 
         if not (obj.access(self.caller, "control") or obj.access(self.caller, "edit")):
-            self.msg(f"You don't have permission to edit the description of {obj.key}.")
+            self.msg(
+                f"{self.caller.get_display_name(self.caller)} doesn't have permission to edit "
+                f"the features of {obj.get_display_name(self.caller)}."
+            )
             return
 
         self.caller.db.evmenu_target = obj
@@ -107,7 +109,7 @@ class CmdDesc(COMMAND_DEFAULT_CLASS):
             caller.msg(f"You don't have permission to edit the description of {obj.key}.")
 
 
-class CmdDestroy(COMMAND_DEFAULT_CLASS):
+class CmdDestroy(MuxCommand):
     """
     permanently delete objects
 

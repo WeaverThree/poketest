@@ -1,3 +1,5 @@
+
+import re
 import time
 
 from .command import MuxCommand
@@ -6,7 +8,7 @@ from evennia.utils import utils
 
 from world.utils import get_wordcount, split_on_all_newlines
 
-
+_POSESSIVE_SPLITER = re.compile(r"'s", re.IGNORECASE)
 
 class CmdSay(MuxCommand):
     """
@@ -176,7 +178,7 @@ class CmdLook(MuxCommand):
     """
 
     key = "look"
-    aliases = ["l", "ls"]
+    aliases = ["l", "ls", 'll']
     locks = "cmd:all()"
     arg_regex = r"\s|$"
 
@@ -185,15 +187,58 @@ class CmdLook(MuxCommand):
         Handle the looking.
         """
         caller = self.caller
-        if not self.args:
+        args = self.args
+
+        if not args:
             target = caller.location
             if not target:
                 caller.msg("No location to look at. This is an error. Contact staff.")
                 return
         else:
-            target = caller.search(self.args)
+            location = caller.location
+            if location:
+                fcheck = args.lower()
+                if fcheck in location.features:
+                    message = (
+                        f"|Y{location.features[fcheck]['name']} in|n {location.get_display_name(caller)}\n"
+                        f"{location.features[fcheck]['desc']}"
+                    )
+                    self.msg(text=(message, {"type": "look"}), options=None)
+                    return
+
+            search = ""
+            target = None
+            featuretarget = None
+            if args.lower().startswith('my'):
+                target = caller
+                featuretarget = args[2:].strip().lower()
+            check = [x.strip() for x in _POSESSIVE_SPLITER.split(args,1)]
+            if len(check) == 2:
+                search, featuretarget = check
+                featuretarget = featuretarget.lower()
+            else:
+                search = args
+                        
+            if not target:
+                if search:
+                    target = caller.search(search)
+                else:
+                    self.msg("That's not something that can be looked at.")
             if not target:
                 return
+            
+            if featuretarget is not None:
+                if featuretarget in target.features:
+                    message = (
+                        f"{target.get_display_name(caller)}|Y's {target.features[featuretarget]['name']}|n\n"
+                        f"{target.features[featuretarget]['desc']}"
+                    )
+                    self.msg(text=(message, {"type": "look"}), options=None)
+                    return
+                else:
+                    self.msg(f"{target.get_display_name(caller)} has no '{featuretarget}'.")
+                    return
+                
         desc = caller.at_look(target)
         # add the type=look to the outputfunc to make it
         # easy to separate this output in client.

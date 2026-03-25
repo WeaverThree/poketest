@@ -186,16 +186,6 @@ class CmdZoneInfo(MuxCommand):
                 return
 
 
-
-
-
-                
-                
-            
-
-
-
-
 class CmdSetSpecialRoom(Command):
     """
     Sets the special room flag for the current location. Equivilant to @tag here=flag:SpecialRoom,
@@ -300,9 +290,97 @@ class CmdSetSpecialRoom(Command):
             )
         
 
+class CmdFeature(MuxCommand):
+    """
+    Sets info about a zone.
+    
+    Usage:
+        @feature <target> -> show all features on target
+        @feature <target>/<featurename> -> show text of just feature
+        @feature <target>/<featurename> = <text> -> Set text of feature
+        @feature/del <target>/<featurename> -> remove feature
+    """
 
+    _usage = "USAGE: <target>[/featurename [= text]]"
+
+    key = "@feature"
+    locks = "cmd:all()"
+    help_category = "Building"
+
+    def func(self):
+
+        # General setup section -
+
+        zonedb = evennia.GLOBAL_SCRIPTS.zonedb
+
+        caller = self.caller
+
+        rhs = self.rhs
+        lhs = self.lhs
+
+        split = [part.strip() for part in lhs.split('/',1)]
         
+        targetname = split[0]
+        featurename = split[1] if len(split) == 2 else ''
+        featuresearch = featurename.lower()
+    
+        if not targetname:
+            self.msg(self._usage)
+            return
 
+        target = caller.search(targetname)
+        if not target:
+            return
+
+        if not rhs and 'del' not in self.switches:
+            if not featuresearch:
+                if not target.features:
+                    self.msg(f"{target.get_display_name(caller)} has no features.")
+                    return
+                header = header_two_slot(_WIDTH, f"{target.get_display_name(caller)}|w's Features|n", headercolor='|Y')
+                table = evtable.EvTable("|wFeature|n", "|wDesc|n", border_width=0)
+                for fsearch in target.features:
+                    feat = target.features[fsearch]
+                    desc = feat['desc']
+                    name = feat['name']
+                    desc = f"{crop(desc, 50, '…')} |B[{display_len(desc)} chars]|n"
+                    table.add_row(name, desc)
+
+                self.msg(f"{header}\n{table}\n")
+
+            elif featuresearch in target.features: 
+                feat = target.features[featuresearch]
+                name = feat['name']
+                desc = feat['desc']
+                self.msg(
+                    f"|Y - |n{target.get_display_name(caller)}|Y's {name} -> |n{desc}\n"
+                )
+            else:
+                self.msg(f"{target.get_display_name(caller)} has no feature '{featuresearch}'")
+            return
+
+        # At this point we have an = so permissions come into play
+
+        if not (target.access(self.caller, "control") or target.access(self.caller, "edit")):
+            self.msg(
+                f"{caller.get_display_name(caller)} doesn't have permission to edit "
+                f"the features of {target.get_display_name(caller)}."
+            )
+            return
+
+        if not featurename:
+            self.msg(self._usage)
+            return
         
+        if not rhs and 'del' in self.switches:
+            if featuresearch in target.features:
+                del target.features[featuresearch]
+                self.msg(f"{target.get_display_name(caller)} updated.")
+                return
+            else:
+                self.msg(f"{target.get_display_name(caller)} has no feature '{featuresearch}'")
+                return
 
-
+        target.features[featuresearch] = {'name':featurename, 'desc':rhs}
+        self.msg(f"{target.get_display_name(caller)} updated.")
+        

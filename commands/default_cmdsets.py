@@ -99,6 +99,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(building.CmdZone())
         self.add(building.CmdZoneInfo())
         self.add(building.CmdSetSpecialRoom())
+        self.add(building.CmdFeature())
         self.add(chargen.CmdChargenSetSpecies())
         self.add(chargen.CmdChargenSetNature())
         self.add(chargen.CmdChargenBuyIVs())
