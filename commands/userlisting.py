@@ -401,8 +401,8 @@ class CmdStaff(Command):
             *header, table=(names,durations,idles,titles,stafftags),
             border_width=0,                              
         )
-        title = f' - - - {settings.SERVERNAME} Staff List - - - '
-        self.caller.msg(f"\n|w{title:^{_WIDTH}}|n\n{table}")
+        title = header_two_slot(_WIDTH, f"|w{settings.SERVERNAME} Staff|n", headercolor="|M")
+        self.caller.msg(f"{title}\n{table}\n")
 
 
 class CmdStatus(Command):
