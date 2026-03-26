@@ -44,8 +44,8 @@ VOTE_XP = [125, 150] # Final repeats. Increase fixed at 1000xp
 
 REFRESH_HOUR = 3 # Hour of the day when PP and votes are refreshed
 
-RP_TRAP_MOVE_DELAY = 15 # Seconds
-RP_TRAP_IDLE_TIME = 60 * 5 
+#RP_TRAP_MOVE_DELAY = 15 # Seconds
+#RP_TRAP_IDLE_TIME = 60 * 5 # system not currently implemented
 GENERAL_IDLE_TIME = 60 * 10 # How long until names go dim from idle
 TALKERS_LIST_HOLD_TIME = 60 * 60 * 6 # 6 hours
 

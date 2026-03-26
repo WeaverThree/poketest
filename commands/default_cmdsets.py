@@ -138,6 +138,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(mons.CmdMoveLookup())
         self.add(mons.CmdRandMoves())
         self.add(mons.CmdUseMove())
+        self.add(mons.CmdMoveTeleport())
         self.add(pathfinding.CmdPathfind())
         self.add(userlisting.CmdWho())
         self.add(userlisting.CmdWhat())

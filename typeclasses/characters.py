@@ -42,6 +42,7 @@ _RP_TRAP_MOVE_DELAY = settings.RP_TRAP_MOVE_DELAY
 _RP_TRAP_IDLE_TIME = settings.RP_TRAP_IDLE_TIME
 _GENERAL_IDLE_TIME = settings.GENERAL_IDLE_TIME
 _TAG_OOC_TARGET = settings.TAG_OOC_TARGET
+_ROOM_TAG_TELTARGET = settings.ROOM_TAG_TELTARGET
 _VOTE_XP = settings.VOTE_XP
 
 _display_statname = {
@@ -185,6 +186,10 @@ class Character(ObjectParent, DefaultCharacter):
 
     following = AttributeProperty(None, category='follow')
     followers = AttributeProperty(set(), category='follow')
+
+    teleport_known = AttributeProperty(set(), category='teleportmove')
+    teleport_waiting = AttributeProperty(None, category='teleportmove')
+    teleport_response = AttributeProperty("", category='teleportmove')
 
 
 
@@ -780,6 +785,10 @@ class Character(ObjectParent, DefaultCharacter):
                 string = "{object} disappears in a digital flash from {origin}, heading for {destination}."
             elif move_type == 'teleport':
                 string = "{object} disappears in an unexpected way from {origin}, heading for {destination}."
+            elif move_type == 'teleportmove':
+                string = (
+                    "{object} fades out in a rainbow haze from {origin}, telepathically meandering to {destination}."
+                )
             elif move_type == 'sweep':
                 string = "{object} is gently swept away from {origin} to their home at {destination}."
             else:
@@ -853,6 +862,11 @@ class Character(ObjectParent, DefaultCharacter):
                     string = "{object} appears in a digital flash at {destination}, from {origin}."
                 elif move_type == "teleport":
                     string = "{object} appears in an unexpected way at {destination}, from {origin}."
+                elif move_type == 'teleportmove':
+                    string = (
+                        "{object} appears in a rainbow haze at {destination}, having ridden the telepathic "
+                        "currents from {origin}."
+                    )
                 elif move_type == "sweep":
                     string = "{object} is gently deposited by the sweeper at {destination}, from {origin}."
                 else:
@@ -1153,6 +1167,18 @@ class PlayerCharacter(Character):
         #         self.register_post_command_message(
         #             f"|MIC activity detected|n, locking movement for {_RP_TRAP_MOVE_DELAY} seconds."
         #         )
+
+        if 'Teleport' in self.moves_known:
+            if self.location.tags.get(_ROOM_TAG_TELTARGET):
+                if self.location not in self.teleport_known:
+                    # Not sure if this is the best order for these checks...
+                    self.register_post_command_message(
+                        f"{self.get_display_name(self)} learns {self.location.get_display_name(self)} "
+                        "as a teleport destination!")
+                    self.teleport_known.add(self.location)
+    
+
+
         super().at_post_move(src, **kwargs)
 
 

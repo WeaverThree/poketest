@@ -22,7 +22,7 @@ class Crons(Script):
         """ 
         Happens on both server start and reload.
         """
-        self.clear_approve_locks()
+        self.fix_player_temp_status()
 
         if not self.next_sweep:
             self.next_sweep = time.time() + settings.SWEEP_CHECK_TIME
@@ -33,7 +33,7 @@ class Crons(Script):
             self.next_refresh = nexttime.timestamp()
 
 
-    def clear_approve_locks(self):
+    def fix_player_temp_status(self):
         """
         Clean up approval locks that got lost because a server restart interrupted an admin
         approving a character, so that people don't get stuck forever.
@@ -43,6 +43,8 @@ class Crons(Script):
                 logger.log_info(f"Unlocking {player.name} from approvelock.")
                 player.approvelocked = False
                 player.approved = False
+            player.teleport_waiting = None
+            player.teleport_response = ""
 
 
     def at_repeat(self, **kwargs):

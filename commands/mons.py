@@ -3,12 +3,18 @@
 import math
 import random
 
-from .command import MuxCommand, Command
+from django.conf import settings
+
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils import evtable, string_suggestions
 
+from .command import MuxCommand, Command
+from typeclasses.characters import Character, PlayerCharacter
+from typeclasses.rooms import Room
 from world.monutils import type_vuln_table, get_display_mon_banner, moves_table, single_move, color_uses_text
 
+_ROOM_TAG_TELTARGET = settings.ROOM_TAG_TELTARGET
+_ROOM_TAG_NOTEL = settings.ROOM_TAG_NOTEL
 
 class CmdMonTypes(Command):
     """
@@ -275,3 +281,231 @@ class CmdUseMove(Command):
         movetext = "{sender} used " + single_move(actual_movename)
         caller.location.msg_contents(movetext, mapping={'sender': caller})
         caller.msg(f"    |x(PP Remaining: {color_uses_text(move['uses'],used,"|x")})|n")
+
+
+class CmdMoveTeleport(MuxCommand):
+    """
+    Use the move Teleport to teleport yourself to another location or person. Call with no arguments
+    for destination list.
+
+    Usage:
+        +teleport -> show known teleport destinations
+        +teleport <destination> -> teleport to destination
+        +teleport <creature> -> teleport to creature if they allow it
+    """
+    key = '+teleport'
+    aliases = '+tel'
+    locks = "cmd:all()"
+    help_category = "Mons"
+    
+    def func(self):
+        mondata = GLOBAL_SCRIPTS.mondata
+
+        caller = self.caller
+        location = caller.location
+        args = self.args
+
+        if caller.teleport_waiting:
+            target = caller.teleport_waiting
+            if args.strip().lower().startswith('y'):
+                self.msg("Teleport accepted.")
+                target.teleport_response = 'y'
+            elif args.strip().lower().startswith('n'):
+                self.msg("Teleport declined.")
+                target.teleport_response = 'n'
+            else:
+                self.msg(
+                    f"{target.get_display_name(caller)} is waiting for {caller.get_display_name(caller)}'s "
+                    "response about teleporting to you.\n"
+                    "Use |b+teleport yes|n or |b+teleport no|n to respond. Thanks!"
+                )
+            return
+
+        teleport_move = "Teleport"
+
+        if teleport_move not in caller.moves_equipped:
+            if teleport_move not in caller.moves_known:
+                self.msg(
+                    f"{caller.get_display_name(caller)} doesn't know how to teleport."
+                )
+            else:
+                self.msg(
+                    f"{caller.get_display_name(caller)} doesn't have teleport equipped."
+                )
+            return
+        
+        if not args:
+            if not caller.teleport_known:
+                self.msg(f"{caller.get_display_name(caller)} doesn't know any destinations to teleport to.")
+                return
+
+            out = [f"Places {caller.get_display_name(caller)} knows how to teleport to:"]
+            for room in sorted(caller.teleport_known, key=lambda x: x.name):
+                if room.tags.get(_ROOM_TAG_TELTARGET): # Filter out rooms with tag removed...
+                    out.append(f" - {room.get_display_name(caller)}")
+            out.append('')
+
+            self.msg('\n'.join(out))
+            return
+
+        used = caller.moves_equipped[teleport_move]
+        move = mondata.moves[teleport_move]
+        if used + 1 > move['uses']:
+            self.msg(f"{caller.get_display_name(caller)} doesn't have the PP left to use {teleport_move} right now.")
+            return
+
+        if location.tags.get(_ROOM_TAG_NOTEL):
+            self.msg(
+                "Something is interfering with the psychic field here. "
+                f"{caller.get_display_name(caller)} can't teleport from here."
+            )
+            return
+        elif not location.is_ic_room:
+            self.msg(
+                "Please enter the IC grid before teleporting."
+            )
+            return
+
+        if args in ('self', 'me'):
+            self.msg("Teleportation to self denied~")
+            return
+    
+        search = PlayerCharacter.objects.search(args)
+        chartarget = None
+        if len(search) > 2:
+            self.msg(f"Got multiple hits for '{args}'. This shouldn't happen. Please notify staff.")
+            return
+        if search:
+            chartarget = search[0]
+
+        movetext = "{sender} used " + single_move(teleport_move)
+        starttext = "{sender} begins to glow in rainbow hues."
+        failtext = "{sender}'s rainbow colors flicker and fade."
+
+        if chartarget:
+            if chartarget == caller:
+                self.msg("Teleportation to self denied~")
+                return
+
+            target = chartarget.location
+
+            if target == caller.location:
+                self.msg(f"{chartarget.get_display_name(caller)} is right here!")
+                return
+            
+            if chartarget.is_idle:
+                self.msg(
+                    f"{chartarget.get_display_name(caller)} is idle. "
+                    f"Don't want to waste {caller.get_display_name(caller)}'s PP, try again when "
+                    f"{chartarget.get_display_name(caller)} is active."
+                )
+                return
+
+            if chartarget.teleport_waiting:
+                self.msg(
+                    f"The psychic line to {chartarget.get_display_name(caller)} is congested. "
+                    "Wait a little and try again."
+                )
+                return
+
+            if target.tags.get(_ROOM_TAG_NOTEL) or not target.is_ic_room:
+                self.msg(
+                    f"{caller.get_display_name(caller)} can't get a lock on {chartarget.get_display_name(caller)}, "
+                    "something is interfering with the psychic field around them."
+                )
+                return
+            
+            # Ok we're doing it (character)
+            
+            caller.moves_equipped[teleport_move] += 1
+            used += 1
+            location.msg_contents(movetext, mapping={'sender': caller})
+            caller.msg(f"    |x(PP Remaining: {color_uses_text(move['uses'],used,"|x")})|n")
+            location.msg_contents(starttext, mapping={'sender': caller})
+
+            caller.msg(
+                f"Asking {chartarget.get_display_name(caller)} if {caller.get_display_name(caller)} "
+                "can teleport to their location. Please hold. (Up to 30 seconds.)"
+            )
+            chartarget.msg(
+                f"{caller.get_display_name(chartarget)} |Mis asking to teleport to |n"
+                f"{chartarget.get_display_name(chartarget)}|M's "
+                "location. Respond with |b+teleport yes|M or |b+teleport no|M. The request will time out in "
+                "30 seconds.|n" 
+            )
+
+            caller.teleport_response = ""
+            chartarget.teleport_waiting = caller
+
+            for tick in range(10):
+                yield 3
+                if caller.teleport_response:
+                    if caller.teleport_response.strip().lower().startswith('y'):
+                        chartarget.teleport_waiting = None
+                        caller.teleport_response = ""
+                        caller.move_to(target, move_type="teleportmove")
+                        return
+                    else:
+                        break
+            
+            chartarget.teleport_waiting = None
+            caller.teleport_response = ""
+            caller.msg("Teleport declined.")
+            location.msg_contents(failtext, mapping={'sender': caller})
+            return
+        
+        # If we get here, we're teleporting to a location
+        search = Room.objects.search(args)
+        target = None
+        if len(search) > 2:
+            self.msg(f"Got multiple hits for '{args}'. This shouldn't happen. Please notify staff.")
+            return
+        if search:
+            target = search[0]
+
+        if (not target) or (not target.tags.get(_ROOM_TAG_TELTARGET)):
+            self.msg(f"Could not find a location or creature named '{args}'")
+            return
+
+        if target == caller.location:
+            self.msg(f"{caller.get_display_name(caller)} is already here!")
+            return
+
+        if not target in caller.teleport_known:
+            self.msg(
+                f"{caller.get_display_name(caller)} hasn't learned how to teleport to "
+                f"{target.get_display_name(caller)}."
+            )
+            return
+        
+        # At this point, we're good...
+            
+        caller.moves_equipped[teleport_move] += 1
+        used += 1
+        location.msg_contents(movetext, mapping={'sender': caller})
+        caller.msg(f"    |x(PP Remaining: {color_uses_text(move['uses'],used,"|x")})|n")
+        location.msg_contents(starttext, mapping={'sender': caller})
+
+        yield 3 # do a little pause for effect
+
+        caller.move_to(target, move_type="teleportmove")
+
+        
+
+
+
+
+                        
+
+
+
+
+
+
+            
+
+
+        
+
+
+
