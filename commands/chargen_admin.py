@@ -10,7 +10,7 @@ from evennia.comms.models import ChannelDB
 
 from typeclasses.characters import Character, PlayerCharacter
 
-from world.utils import get_specialroom, get_defaulthome
+from world.utils import get_specialroom, get_defaulthome, splitif
 from world.monutils import get_display_mon_banner, get_inline_mon_banner
 
 from .chargen import _VALID_FIELDS
@@ -241,13 +241,13 @@ class CmdAdminSetNature(MuxCommand):
 class CmdAdminBuyIVs(MuxCommand):
     """
     Usage:
-        @buyivs <target> = <stat>, <tokens to spend>
+        @buyivs <target>/<stat> = <tokens to spend>
     """
     key = '@buyivs'
     locks = "cmd:perm(Admin)"
     help_category = "Chargen"
 
-    _usage = "Usage: buyivs [<target> =] stat,tokens to spend"
+    _usage = "Usage: @buyivs <target>/<stat> = <tokens to spend>"
 
     def func(self):
         mondata = GLOBAL_SCRIPTS.mondata
@@ -255,10 +255,14 @@ class CmdAdminBuyIVs(MuxCommand):
         if not self.lhs:
             self.caller.msg(self._usage)
             return
+        
+        search, stat = splitif(self.lhs, '/')
 
-        target = self.caller.search(self.lhs, exact=True, typeclass=[Character, PlayerCharacter])
+        target = self.caller.search(search, exact=True, typeclass=[Character, PlayerCharacter])
+        amount = self.rhs
 
-        if not target:
+        if not (target and stat and amount):
+            self.msg(self._usage)
             return
     
         if not (target.access(self.caller, "control") or target.access(self.caller, "edit")):
@@ -269,12 +273,6 @@ class CmdAdminBuyIVs(MuxCommand):
         if not remaining:
             self.caller.msg(f"{target.name} has no IV tokens to spend.")
         
-        if len(self.rhslist) != 2:
-            self.caller.msg(self._usage)
-            return
-        
-        stat, amount = self.rhslist
-
         if stat not in mondata.lookup_statlist:
             self.msg(f"'{stat}' is not a valid stat.")
             return
@@ -639,21 +637,20 @@ class CmdChargenAdminSetInfo(MuxCommand):
     For valid fields and current settings run with just a target.
 
     Usage:
-        @setinfo <target> [= field : value]
+        @setinfo <target>
+        @setinfo <target>/<field> = <value>
     """
     key = '@setinfo'
     locks = "cmd:perm(Admin)"
     help_category = "Chargen"
 
-    _usage = "Usage: @setinfo <target> [= field : value]"
+    _usage = "Usage: @setinfo <target>[/field = value]"
 
     def func(self):
-        
-        if not self.lhs:
-            self.msg(self._usage)
-            return
-
-        target = self.caller.search(self.lhs)
+            
+        search, field = splitif(self.lhs, '/')
+        target = self.caller.search(search)
+        text = self.rhs
         
         if not target:
             return
@@ -662,7 +659,7 @@ class CmdChargenAdminSetInfo(MuxCommand):
             self.msg("This command only works on characters.")
             return
         
-        if not self.rhs:
+        if not (field or text):
             short_desc = target.short_desc
             full_name = target.full_name
             player_name = target.player_name
@@ -677,14 +674,10 @@ class CmdChargenAdminSetInfo(MuxCommand):
             )
             return      
 
-        rargs = self.rhs.split(':',1)
-
-        if len(rargs) != 2:
+        if not field or not text:
             self.msg(self._usage)
             return
-        
-        field, text = rargs
-            
+
         field = field.lower()
         if not field in _VALID_FIELDS:
             self.msg(f"'{field}' is not a valad field")

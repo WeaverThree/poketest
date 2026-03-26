@@ -115,3 +115,9 @@ def wrapif(start, middle, end, cond):
 def display_padright(text, width):
     length = display_len(text)
     return " " * (width - length) + text
+
+def splitif(text, delim):
+    split = text.split(delim,1)
+    if len(split) == 1:
+        split.append('')
+    return [x.strip() for x in split]
