@@ -14,9 +14,6 @@ I'm just making this public to make things easier.
 
 - vote for offline people? idle people? talk IC inside the last hour maybe?
 
-- special teleport command for teleport users
-    - other movement abilities?
-
 - prune unused zones (no name no rooms no desc) on @zoneinfo
 
 - modify AUP room for minimal jail use
