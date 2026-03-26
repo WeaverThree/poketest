@@ -27,6 +27,7 @@ from world.utils import builder_notice, replace_mush_escapes, header_two_slot, g
 
 _TALKERS_LIST_HOLD_TIME = settings.TALKERS_LIST_HOLD_TIME
 _WIDTH = settings.OUR_WIDTH
+_FLAGS = settings.ROOM_TAG_FLAGS
 _INFLECT = inflect.engine()
 
 _EXIT_NAME_ORDER = ["[N]", "[NE", "[E]", "[SE", "[S]", "[SW", "[W]", "[NW", "[U]", "[D]", "[I]", "[IN", "[O]"]
@@ -221,6 +222,13 @@ class ObjectParent:
         extra_name_info = self.get_extra_display_name_info(looker, **kwargs)
         desc = self.get_display_desc(looker, **kwargs)
         
+        flags = []
+        for flag in sorted(_FLAGS):
+            if self.tags.has(flag):
+                flags.append(_FLAGS[flag])
+        flags = ''.join(flags)
+
+
         if display_len(desc) < settings.DESIRED_MIN_DESC:
             builder_notice(looker, "This room should have a longer desc.")
 
@@ -230,12 +238,14 @@ class ObjectParent:
             zonetag = self.tags.get(category="Zone", return_list=True)
             if len(zonetag) == 0:
                 builder_notice(looker, "You should zone this room.")
+                zname = ''
+                zdesc = ''
             elif len(zonetag) != 1:
                 builder_notice(looker, "Room should only have one zone tag.")
             if zonetag:
                 zonetag = zonetag[0]
                 if zonetag in zonedb.zones:
-                    zname = zonedb.zones[zonetag]['name']
+                    zname = zonedb.zones[zonetag]['name'] if zonedb.zones[zonetag]['name'] else f'|r{zonetag}|n'
                     zdesc = zonedb.zones[zonetag]['desc']
                 else:
                     zname = f'|r{zonetag}|n'
@@ -249,7 +259,7 @@ class ObjectParent:
         # For reasons entirely unclear to me, roomname, extra_name_info, and desc need to be
         # subscripted here...
 
-        header = header_two_slot(_WIDTH, f"|w{roomname}{extra_name_info}|n", f"|w{zname}|n" if zname else None)
+        header = header_two_slot(_WIDTH, f"|w{roomname}{extra_name_info}|b{flags}|n", f"|w{zname}|n" if zname else None)
 
         lasttime = time_format(time.time() - self.last_ic_talk_time_loc, 0) if self.last_ic_talk_time_loc else "Never"
         tmp_last_talk_time = f"(TMP) Last Talk: {lasttime} Wordcount here: {self.ic_wordcount_loc}"

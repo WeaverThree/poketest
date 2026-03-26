@@ -55,13 +55,12 @@ SWEEP_CHECK_TIME = 60 * 5 # How often to run the sleeper sweep check
 OUR_WIDTH = 74 # This controls monmu customized stuff, not evennia default
 DESIRED_MIN_DESC = 255 # Bitch when descriptions are shorter
 
-# Valid room types for @setspecialroom
+# Valid room types for @setspecialroom - these are tags that there can only be one of 
 
 VALID_ROOM_TAGS = [
     "defaulthome",
     "jail",
     "ooctarget",
-    "sleeperhome",
     "spawn",
 ]
 
@@ -71,10 +70,19 @@ VALID_ROOM_TAGS = [
 TAG_DEFAULT_HOME = "defaulthome"
 TAG_JAIL_LOCATION = "jail"
 TAG_OOC_TARGET = "ooctarget"
-TAG_SLEEPER_SWEEPER_DEST = "sleeperhome"
 TAG_START_LOCATION = "spawn"
 
 ROOM_TAG_NOSWEEP = "nosweep"
+ROOM_TAG_HOMEABLE = "homeable" # Implies nosweep
+ROOM_TAG_TELTARGET = "teltarget"
+ROOM_TAG_NOTEL = "notel"
+
+ROOM_TAG_FLAGS = {
+    'nosweep': 'Ns',
+    'homeable': 'H',
+    'teltarget': 'T',
+    'notel': 'Nt',
+}
 
 REGISTRATION_PASSTOKEN = None # Please put me in secret_settings.py - string with no spaces
 MAX_NAME_LENGTH = 16

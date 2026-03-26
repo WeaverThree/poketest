@@ -61,12 +61,13 @@ class Crons(Script):
 
         cutoff_time = now - settings.SWEEP_TIME
         nosweep_tag = settings.ROOM_TAG_NOSWEEP
+        homeable_tag = settings.ROOM_TAG_HOMEABLE
 
         for character in PlayerCharacter.objects.all_family():
             if not character.has_account:
                 if character.last_puppeted < cutoff_time:
                     oldloc = character.location
-                    if oldloc.is_ic_room and not oldloc.tags.has(nosweep_tag):
+                    if oldloc.is_ic_room and not oldloc.tags.has(nosweep_tag) and not oldloc.tags.has(homeable_tag):
                         if character.move_to(character.home, move_type="sweep"):
                             
                             icmsg = ""
