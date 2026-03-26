@@ -18,7 +18,7 @@ I'm just making this public to make things easier.
 
 - modify AUP room for minimal jail use
 
-- change setinfo and other commands that use target=var,data or target=var:data to use target/var=data, like @set does.
+- delete what? figure out look, +stats, +flook
 
 - Figure out what we're going to do about UTF characters
 - Test other mu clients
