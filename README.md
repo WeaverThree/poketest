@@ -16,8 +16,6 @@ I'm just making this public to make things easier.
 
 - prune unused zones (no name no rooms no desc) on @zoneinfo
 
-- modify AUP room for minimal jail use
-
 - delete what? figure out look, +stats, +flook
 
 - Figure out what we're going to do about UTF characters

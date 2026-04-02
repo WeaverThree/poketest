@@ -93,6 +93,7 @@ MAX_NAME_LENGTH = 16
 
 # This is the name of your game. Make it catchy!
 SERVERNAME = "Pokémorph Below 2.0α"
+GAME_SLOGAN= "Anthro Roleplaying"
 
 BASE_CHARACTER_TYPECLASS = "typeclasses.characters.PlayerCharacter"
 COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"

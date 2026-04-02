@@ -1,0 +1,52 @@
+<h1 class="card-title">Pokémorph Below</h1>
+
+<hr/>
+
+<p class="lead"></p>
+
+<p>
+Pokemorph Below is a post-apocolyptic sci-fi roleplaying game set in a future where the surface of the planet has been scorched, and the only remaining population lives deep underground in massive cave complexes, all evolved from the surviving 'mon on the surface. Starting from Canal City, one of the most water-rich caves, and branching out to the rebel stronghold of Scrap Town, as well as the Den of Sin Basalt City, life in the underground has to deal not only with the limited resources available, but also the very human elements of greed, lust, and revenge in a world without natural sunlight to sustain them.
+</p>
+
+{% if webclient_enabled %}
+
+<p><a href="{% url 'webclient:index' %}" class="playbutton">Play in the browser!</a></p>
+
+{% endif %}
+{% if telnet_enabled %}
+<p>
+    Telnet (and MU* clients): <strong>{{ server_hostname }}</strong>, port
+    {% for port in telnet_ports %}
+    {% if not forloop.first and forloop.last %} or
+    {% elif forloop.counter != 1 %},
+    {% endif %}
+    <strong>{{ port }}</strong>
+    {% endfor %}
+</p>
+{% endif %}
+{% if telnet_ssl_enabled %}
+<p>
+    Telnet (SSL): <strong>{{ server_hostname }}</strong>, port
+    {% for port in telnet_ssl_ports %}
+    {% if not forloop.first and forloop.last %} or
+    {% elif forloop.counter != 1 %},
+    {% endif %}
+    <strong>{{ port }}</strong>
+    {% endfor %}
+</p>
+{% endif %}
+{% if ssh_enabled %}
+<p>
+    SSH: <strong>{{ server_hostname }}</strong>, port
+    {% for port in ssh_ports %}
+    {% if not forloop.first and forloop.last %} or
+    {% elif forloop.counter != 1 %},
+    {% endif %}
+    <strong>{{ port }}</strong>
+    {% endfor %}
+</p>
+{% endif %}
+<p>
+    For setting info and instructions,
+    see the <a href="https://pkmorph.twosune.net/">Pokemorph Below Documetation Page</a>.
+</p>

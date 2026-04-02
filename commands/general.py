@@ -148,7 +148,7 @@ class CmdStats(Command):
     """
 
     key = "+stats"
-    aliases = ["+sheet", "+compare"]
+    aliases = ["+stat", "+sheet", "+compare"]
     locks = "cmd:all()"
     help_category = "People"
 
