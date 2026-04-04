@@ -9,10 +9,12 @@ from django.urls import include, path
 
 from evennia.web.website.urls import urlpatterns as evennia_website_urlpatterns
 
-from evennia.web.website.views import accounts, channels, characters, errors
+from evennia.web.website.views import accounts, channels, errors
 from evennia.web.website.views import help as helpviews
 from evennia.web.website.views import index
+from evennia.web.website.views import characters as evcharacters
 
+from .views import characters
 
 urlpatterns = [
     # website front page

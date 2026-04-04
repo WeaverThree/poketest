@@ -1,0 +1,35 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}
+{{ view.page_title }} ({{ object }})
+{% endblock %}
+
+{% block content %}
+
+{% load addclass %}
+<div class="row">
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <h1 class="card-title">{{ object }}</h1>
+        {{ object.faction }} {{ object.rank }} {{ object.subtype }} {{ object.species }}
+        <b> played by </b>
+        {{ player_name }}
+        <hr />
+
+        <div class="row">
+          <div class="col">
+            {% for line in webdesc %}
+
+            <p>{{line}}</p>
+
+            {% endfor %}
+          
+          </div>
+        </div>
+          
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
